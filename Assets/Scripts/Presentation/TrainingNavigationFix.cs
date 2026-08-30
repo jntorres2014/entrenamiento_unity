@@ -39,6 +39,8 @@ namespace Entrenamiento.Presentation
                 canvas.gameObject.AddComponent<TrainingUiMagic>();
             if (canvas.GetComponent<ARTrainingModeController>() == null)
                 canvas.gameObject.AddComponent<ARTrainingModeController>();
+            if (canvas.GetComponent<CameraTrainingModeController>() == null)
+                canvas.gameObject.AddComponent<CameraTrainingModeController>();
             if (canvas.GetComponent<TrainingHomeCView>() == null)
                 canvas.gameObject.AddComponent<TrainingHomeCView>();
             if (canvas.GetComponent<TrainingFlowCView>() == null)
