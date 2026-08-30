@@ -40,7 +40,8 @@ namespace Entrenamiento.Presentation
             {
                 TrainingUiStyler.StyleInfo(button);
             }
-            else if (objectName.Contains("start") || objectName.Contains("host") || objectName.Contains("restart"))
+            else if (objectName.Contains("artraining") || objectName.Contains("arprimary") ||
+                     objectName.Contains("start") || objectName.Contains("host") || objectName.Contains("restart"))
             {
                 TrainingUiStyler.StylePrimary(button);
             }
