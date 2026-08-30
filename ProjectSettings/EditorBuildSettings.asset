@@ -1,0 +1,24 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1045 &1
+EditorBuildSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Scenes:
+  - enabled: 0
+    path: Assets/Scenes/GetStarted_Scene.unity
+    guid: 6888813f2bd9e4521b9b1343abf0c60f
+  - enabled: 0
+    path: Assets/Scenes/MultiStationTest.unity
+    guid: 723b4f511dd98fc4099228c6da2d6ffd
+  - enabled: 0
+    path: Assets/Scenes/NearbyBridgeTestClean.unity
+    guid: 2155cba17cec67c488206a64fb260cc8
+  - enabled: 0
+    path: Assets/Scenes/NearbyConnectionTest.unity
+    guid: c1f73a8ee95fc6542acbb22e708e33c7
+  - enabled: 1
+    path: Assets/Scenes/TrainingNearby.unity
+    guid: c17d0f1bef2b9ef4592b76102f5636b5
+  m_configObjects:
+    com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
