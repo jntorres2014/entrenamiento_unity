@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using Entrenamiento.Core.Models;
 using TMPro;
 using UnityEngine;
@@ -87,12 +88,19 @@ namespace Entrenamiento.Presentation
         {
             EnsureImage();
             _backgroundImage.color = StationColorPalette.ToUnityColor(color);
+
+            // TrainingNearbyBootstrap mantiene el dato real GO/NO-GO dentro del
+            // StationAgent. Lo leemos solo para presentación, sin duplicar reglas.
+            if (TryReadCurrentGoFlag(out bool isGo))
+            {
+                SetPrompt(isGo);
+            }
+            else
+            {
+                SetPrompt(true);
+            }
         }
 
-        /// <summary>
-        /// Actualiza únicamente el mensaje visual de la pantalla. En modo GO
-        /// invita a tocar; en NO-GO deja explícito que hay que quedarse quieto.
-        /// </summary>
         public void SetPrompt(bool isGo)
         {
             EnsurePrompt();
@@ -111,6 +119,33 @@ namespace Entrenamiento.Presentation
         public void OnPointerClick(PointerEventData eventData)
         {
             OnTapped?.Invoke();
+        }
+
+        private static bool TryReadCurrentGoFlag(out bool isGo)
+        {
+            isGo = true;
+
+            var behaviours = UnityEngine.Object.FindObjectsByType<MonoBehaviour>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+            foreach (var behaviour in behaviours)
+            {
+                if (behaviour == null || behaviour.GetType().Name != "TrainingNearbyBootstrap") continue;
+
+                var field = behaviour.GetType().GetField("_localAgent", BindingFlags.Instance | BindingFlags.NonPublic);
+                object agent = field?.GetValue(behaviour);
+                if (agent == null) continue;
+
+                var property = agent.GetType().GetProperty("LastArmWasGo", BindingFlags.Instance | BindingFlags.Public);
+                if (property == null || property.PropertyType != typeof(bool)) continue;
+
+                object value = property.GetValue(agent);
+                if (value is bool flag)
+                {
+                    isGo = flag;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void ConfigureText(TMP_Text text, float size, FontStyles style, TextAlignmentOptions alignment)
