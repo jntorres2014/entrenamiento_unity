@@ -43,6 +43,8 @@ namespace Entrenamiento.Presentation
                 canvas.gameObject.AddComponent<TrainingHomeCView>();
             if (canvas.GetComponent<TrainingFlowCView>() == null)
                 canvas.gameObject.AddComponent<TrainingFlowCView>();
+            if (canvas.GetComponent<TrainingOverlayOrderFix>() == null)
+                canvas.gameObject.AddComponent<TrainingOverlayOrderFix>();
             if (canvas.GetComponent<TrainingNavigationFix>() == null)
                 canvas.gameObject.AddComponent<TrainingNavigationFix>();
         }
