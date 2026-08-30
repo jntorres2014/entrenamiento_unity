@@ -4,10 +4,6 @@ using UnityEngine.UI;
 
 namespace Entrenamiento.Presentation
 {
-    /// <summary>
-    /// Mantiene la navegación dentro de la UI moderna y reinstala todos los
-    /// controladores visuales si algún flujo necesita recargar TrainingNearby.
-    /// </summary>
     public sealed class TrainingNavigationFix : MonoBehaviour
     {
         private Button _modernBackButton;
@@ -39,19 +35,14 @@ namespace Entrenamiento.Presentation
 
             if (canvas.GetComponent<TrainingModernUiController>() == null)
                 canvas.gameObject.AddComponent<TrainingModernUiController>();
-
             if (canvas.GetComponent<TrainingUiMagic>() == null)
                 canvas.gameObject.AddComponent<TrainingUiMagic>();
-
             if (canvas.GetComponent<ARTrainingModeController>() == null)
                 canvas.gameObject.AddComponent<ARTrainingModeController>();
-
             if (canvas.GetComponent<TrainingHomeCView>() == null)
                 canvas.gameObject.AddComponent<TrainingHomeCView>();
-
             if (canvas.GetComponent<TrainingFlowCView>() == null)
                 canvas.gameObject.AddComponent<TrainingFlowCView>();
-
             if (canvas.GetComponent<TrainingNavigationFix>() == null)
                 canvas.gameObject.AddComponent<TrainingNavigationFix>();
         }
@@ -71,53 +62,9 @@ namespace Entrenamiento.Presentation
             _backHooked = true;
         }
 
-        private void ReturnToModernHome()
+        private static void ReturnToModernHome()
         {
-            SetPanelActive("HostConfigPanel", false);
-            SetPanelActive("HostProgressPanel", false);
-            SetPanelActive("StationWaitPanel", false);
-            SetPanelActive("SummaryPanel", false);
-
-            var stationView = GetComponentInChildren<StationView>(true);
-            if (stationView != null)
-            {
-                stationView.gameObject.SetActive(false);
-            }
-
-            var rolePanel = FindDeep("RolePanel");
-            if (rolePanel != null)
-            {
-                rolePanel.SetActive(true);
-            }
-
-            var homeVisuals = FindDeep("HomeCVisuals");
-            if (homeVisuals != null)
-            {
-                homeVisuals.SetActive(true);
-                var group = homeVisuals.GetComponent<CanvasGroup>();
-                if (group != null) group.alpha = 1f;
-            }
-
-            SetObjectActive("HostRoleButton", true);
-            SetObjectActive("StationRoleButton", true);
-            SetObjectActive("ARTrainingButton", true);
-
-            if (_modernBackButton != null)
-            {
-                _modernBackButton.gameObject.SetActive(false);
-            }
-        }
-
-        private void SetPanelActive(string objectName, bool active)
-        {
-            var go = FindDeep(objectName);
-            if (go != null) go.SetActive(active);
-        }
-
-        private void SetObjectActive(string objectName, bool active)
-        {
-            var go = FindDeep(objectName);
-            if (go != null) go.SetActive(active);
+            SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
 
         private GameObject FindDeep(string objectName)
@@ -126,7 +73,6 @@ namespace Entrenamiento.Presentation
             {
                 if (t.name == objectName) return t.gameObject;
             }
-
             return null;
         }
     }
