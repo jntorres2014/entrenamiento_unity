@@ -5,11 +5,8 @@ using UnityEngine.UI;
 namespace Entrenamiento.Presentation
 {
     /// <summary>
-    /// Mantiene la navegación dentro de la UI moderna.
-    /// Evita que el botón Atrás recargue TrainingNearby y vuelva a mostrar
-    /// momentáneamente (o de forma permanente) el RolePanel serializado viejo.
-    /// También reinstala los controladores runtime si algún flujo necesita
-    /// recargar la escena completa, como la salida del modo AR.
+    /// Mantiene la navegación dentro de la UI moderna y reinstala todos los
+    /// controladores visuales si algún flujo necesita recargar TrainingNearby.
     /// </summary>
     public sealed class TrainingNavigationFix : MonoBehaviour
     {
@@ -40,9 +37,6 @@ namespace Entrenamiento.Presentation
 
             if (canvas == null) return;
 
-            // En una recarga de escena, RuntimeInitializeOnLoadMethod no vuelve a
-            // construir necesariamente todos los componentes runtime. Los dejamos
-            // explícitamente presentes para que la Home C sea siempre la portada.
             if (canvas.GetComponent<TrainingModernUiController>() == null)
                 canvas.gameObject.AddComponent<TrainingModernUiController>();
 
@@ -54,6 +48,9 @@ namespace Entrenamiento.Presentation
 
             if (canvas.GetComponent<TrainingHomeCView>() == null)
                 canvas.gameObject.AddComponent<TrainingHomeCView>();
+
+            if (canvas.GetComponent<TrainingFlowCView>() == null)
+                canvas.gameObject.AddComponent<TrainingFlowCView>();
 
             if (canvas.GetComponent<TrainingNavigationFix>() == null)
                 canvas.gameObject.AddComponent<TrainingNavigationFix>();
@@ -69,8 +66,6 @@ namespace Entrenamiento.Presentation
             _modernBackButton = go.GetComponent<Button>();
             if (_modernBackButton == null) return;
 
-            // El controlador visual original recargaba la escena. Sustituimos
-            // únicamente la acción del botón, manteniendo su aspecto y animación.
             _modernBackButton.onClick.RemoveAllListeners();
             _modernBackButton.onClick.AddListener(ReturnToModernHome);
             _backHooked = true;
@@ -107,7 +102,6 @@ namespace Entrenamiento.Presentation
             SetObjectActive("StationRoleButton", true);
             SetObjectActive("ARTrainingButton", true);
 
-            // En la portada no debe verse el botón global Atrás.
             if (_modernBackButton != null)
             {
                 _modernBackButton.gameObject.SetActive(false);
