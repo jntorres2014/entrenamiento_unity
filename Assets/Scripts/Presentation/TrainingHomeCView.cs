@@ -21,7 +21,6 @@ namespace Entrenamiento.Presentation
         private CanvasGroup _visualGroup;
         private Image _heroGlow;
         private Sprite _roundedSprite;
-        private Vector3 _arBaseScale = Vector3.one;
         private float _pulseOffset;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
@@ -48,8 +47,6 @@ namespace Entrenamiento.Presentation
 
         private IEnumerator BuildWhenReady()
         {
-            // ARTrainingModeController crea su botón en Awake y TrainingModernUiController
-            // termina el estilo general un frame después. Esperamos a ambos.
             for (int i = 0; i < 30; i++)
             {
                 _rolePanel = FindDeep("RolePanel");
@@ -71,7 +68,6 @@ namespace Entrenamiento.Presentation
                 yield break;
             }
 
-            // Un frame extra deja que el estilizador general termine antes de aplicar la portada C.
             yield return null;
 
             CaptureRoundedSprite();
@@ -96,8 +92,6 @@ namespace Entrenamiento.Presentation
 
         private void HideLegacyRoleCopy()
         {
-            // Conservamos los labels de los tres botones funcionales y ocultamos únicamente
-            // los textos estáticos de la portada vieja.
             foreach (var text in _rolePanel.GetComponentsInChildren<TMP_Text>(true))
             {
                 if (IsChildOf(text.transform, _hostButton.transform) ||
@@ -163,7 +157,6 @@ namespace Entrenamiento.Presentation
             var hero = CreateImage(_visualRoot.transform, "ARHeroCard", UiTheme.CardElevated);
             SetRect(hero.rectTransform, 0.055f, 0.515f, 0.945f, 0.925f);
 
-            // Halo suave detrás del símbolo AR. Es puramente visual y no intercepta toques.
             _heroGlow = CreateImage(hero.transform, "HeroGlow", new Color(UiTheme.Accent.r, UiTheme.Accent.g, UiTheme.Accent.b, 0.12f));
             SetRect(_heroGlow.rectTransform, 0.66f, 0.48f, 0.96f, 0.92f);
 
@@ -186,7 +179,6 @@ namespace Entrenamiento.Presentation
             subtitle.color = UiTheme.TextSecondary;
             subtitle.enableWordWrapping = true;
 
-            // Firma visual de las cuatro zonas AR.
             float startX = 0.055f;
             float gap = 0.018f;
             float width = 0.135f;
@@ -202,7 +194,7 @@ namespace Entrenamiento.Presentation
             {
                 float x0 = startX + i * (width + gap);
                 var bar = CreateImage(hero.transform, $"ZoneBar{i + 1}", colors[i]);
-                SetRect(bar.rectTransform, x0, 0.055f, x0 + width, 0.075f);
+                SetRect(bar.rectTransform, x0, 0.255f, x0 + width, 0.275f);
             }
         }
 
@@ -252,13 +244,10 @@ namespace Entrenamiento.Presentation
 
         private void LayoutFunctionalButtons()
         {
-            // AR: CTA principal dentro del hero.
             SetButtonRect(_arButton, 0.10f, 0.535f, 0.90f, 0.615f);
             SetButtonVisual(_arButton, UiTheme.Accent, "INICIAR AR TRAINING   →", 24, TextAlignmentOptions.Center);
             _arButton.transform.SetAsLastSibling();
-            _arBaseScale = _arButton.transform.localScale;
 
-            // Entrenador y Estación: cards táctiles secundarias.
             SetButtonRect(_hostButton, 0.075f, 0.305f, 0.465f, 0.445f);
             SetButtonVisual(_hostButton, new Color(UiTheme.CardElevated.r, UiTheme.CardElevated.g, UiTheme.CardElevated.b, 0.02f),
                 "ENTRENADOR\n<size=67%><color=#A8B2C1>Crear y dirigir una sesión</color></size>", 24, TextAlignmentOptions.BottomLeft);
@@ -373,14 +362,7 @@ namespace Entrenamiento.Presentation
         {
             if (_rolePanel == null || !_rolePanel.activeInHierarchy) return;
 
-            // Pulso muy leve del CTA AR y de su halo. No afecta su área táctil.
             float wave = (Mathf.Sin(Time.unscaledTime * 2.15f + _pulseOffset) + 1f) * 0.5f;
-            if (_arButton != null)
-            {
-                float scale = Mathf.Lerp(1f, 1.012f, wave);
-                _arButton.transform.localScale = _arBaseScale * scale;
-            }
-
             if (_heroGlow != null)
             {
                 var c = _heroGlow.color;
@@ -449,14 +431,6 @@ namespace Entrenamiento.Presentation
             rect.anchorMax = Vector2.one;
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
-        }
-
-        private void OnDisable()
-        {
-            if (_arButton != null)
-            {
-                _arButton.transform.localScale = _arBaseScale;
-            }
         }
     }
 }
