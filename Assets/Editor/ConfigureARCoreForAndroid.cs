@@ -18,7 +18,12 @@ namespace Entrenamiento.EditorTools
 
         static ConfigureARCoreForAndroid()
         {
-            EditorApplication.delayCall += TryConfigure;
+            EditorApplication.delayCall += ConfigureDelayed;
+        }
+
+        private static void ConfigureDelayed()
+        {
+            TryConfigure();
         }
 
         [MenuItem("Entrenamiento/AR/Configurar ARCore para Android")]
