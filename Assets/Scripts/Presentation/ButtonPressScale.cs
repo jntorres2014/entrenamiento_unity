@@ -28,6 +28,14 @@ namespace Entrenamiento.Presentation
 
             string objectName = gameObject.name.ToLowerInvariant();
 
+            // Los controles del modo SOLO se crean con una jerarquía visual propia
+            // (cards por ejercicio, zonas y CTA). Conservamos esos colores y usamos
+            // este componente únicamente para el feedback de escala al tocar.
+            if (objectName.StartsWith("solo"))
+            {
+                return;
+            }
+
             if (objectName.Contains("reject") || objectName.Contains("cancel") || objectName.Contains("delete"))
             {
                 TrainingUiStyler.StyleDanger(button);
