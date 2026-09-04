@@ -5,22 +5,17 @@ using Entrenamiento.Core.Models;
 namespace Entrenamiento.Core.Rules
 {
     /// <summary>
-    /// Protocolo de aplicación de la sesión de entrenamiento: los mensajes de
-    /// texto que viajan por ILocalTransport entre el host y las estaciones.
-    /// Es independiente del transporte (funciona igual sobre SimulatedTransport
-    /// o Nearby Connections).
+    /// Protocolo de aplicación entre host y estaciones. Mantiene los mensajes
+    /// históricos y suma CHANGE para poder cambiar un estímulo sin cerrar la ronda.
     ///
-    /// Mensajes host -> estación:
-    ///   START|totalRounds            La sesión arranca.
-    ///   ARM|round|color|go           Encendete con este color (round 1-based).
-    ///                                go=1: hay que tocar; go=0: señuelo (NO tocar).
-    ///   OFF|round                    La ronda venció por timeout: apagate.
-    ///   END|hits|misses|avgMs|bestMs La sesión terminó, resumen simple.
-    ///
-    /// Mensajes estación -> host:
-    ///   HIT|round|elapsedMs          El deportista tocó; tiempo medido LOCALMENTE
-    ///                                por la estación (más preciso que medir en el
-    ///                                host, porque no incluye la latencia de red).
+    /// Host -> estación:
+    ///   START|totalRounds
+    ///   ARM|round|color|go
+    ///   CHANGE|round|color|go
+    ///   OFF|round
+    ///   END|hits|misses|avgMs|bestMs
+    /// Estación -> host:
+    ///   HIT|round|elapsedMs
     /// </summary>
     public static class TrainingProtocol
     {
@@ -28,17 +23,19 @@ namespace Entrenamiento.Core.Rules
 
         public const string TypeStart = "START";
         public const string TypeArm = "ARM";
+        public const string TypeChange = "CHANGE";
         public const string TypeOff = "OFF";
         public const string TypeEnd = "END";
         public const string TypeHit = "HIT";
-
-        // ----------------- Formateo -----------------
 
         public static string FormatStart(int totalRounds) =>
             $"{TypeStart}{Separator}{totalRounds}";
 
         public static string FormatArm(int round, StationColor color, bool isGo) =>
             $"{TypeArm}{Separator}{round}{Separator}{color}{Separator}{(isGo ? 1 : 0)}";
+
+        public static string FormatChange(int round, StationColor color, bool isGo) =>
+            $"{TypeChange}{Separator}{round}{Separator}{color}{Separator}{(isGo ? 1 : 0)}";
 
         public static string FormatOff(int round) =>
             $"{TypeOff}{Separator}{round}";
@@ -49,11 +46,6 @@ namespace Entrenamiento.Core.Rules
         public static string FormatHit(int round, int elapsedMs) =>
             $"{TypeHit}{Separator}{round}{Separator}{elapsedMs}";
 
-        // ----------------- Parseo -----------------
-
-        /// <summary>
-        /// Separa un mensaje en tipo + argumentos. Devuelve false si está vacío.
-        /// </summary>
         public static bool TryParse(string payload, out string type, out string[] args)
         {
             type = null;
