@@ -6,16 +6,8 @@ namespace Entrenamiento.Core.Rules
 {
     /// <summary>
     /// Protocolo de aplicación entre host y estaciones. Mantiene los mensajes
-    /// históricos y suma CHANGE para poder cambiar un estímulo sin cerrar la ronda.
-    ///
-    /// Host -> estación:
-    ///   START|totalRounds
-    ///   ARM|round|color|go
-    ///   CHANGE|round|color|go
-    ///   OFF|round
-    ///   END|hits|misses|avgMs|bestMs
-    /// Estación -> host:
-    ///   HIT|round|elapsedMs
+    /// históricos y suma CHANGE para cambiar un estímulo sin cerrar la ronda.
+    /// OFF acepta un flag opcional: 1=timeout, 0=apagado silencioso.
     /// </summary>
     public static class TrainingProtocol
     {
@@ -37,8 +29,10 @@ namespace Entrenamiento.Core.Rules
         public static string FormatChange(int round, StationColor color, bool isGo) =>
             $"{TypeChange}{Separator}{round}{Separator}{color}{Separator}{(isGo ? 1 : 0)}";
 
-        public static string FormatOff(int round) =>
-            $"{TypeOff}{Separator}{round}";
+        public static string FormatOff(int round) => FormatOff(round, true);
+
+        public static string FormatOff(int round, bool timedOut) =>
+            $"{TypeOff}{Separator}{round}{Separator}{(timedOut ? 1 : 0)}";
 
         public static string FormatEnd(int hits, int misses, int avgMs, int bestMs) =>
             $"{TypeEnd}{Separator}{hits}{Separator}{misses}{Separator}{avgMs}{Separator}{bestMs}";
