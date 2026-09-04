@@ -6,7 +6,7 @@ namespace Entrenamiento.Core.Rules
 {
     /// <summary>
     /// Protocolo de aplicación entre host y estaciones.
-    /// START incluye opcionalmente el preset para sincronizar la UI de los pods.
+    /// START incluye el preset para sincronizar la UI de los pods.
     /// OFF: 1=timeout, 0=apagado silencioso.
     /// </summary>
     public static class TrainingProtocol
@@ -21,7 +21,7 @@ namespace Entrenamiento.Core.Rules
         public const string TypeHit = "HIT";
 
         public static string FormatStart(int totalRounds) =>
-            $"{TypeStart}{Separator}{totalRounds}";
+            FormatStart(totalRounds, ExerciseSelection.Current);
 
         public static string FormatStart(int totalRounds, ExerciseMode exercise) =>
             $"{TypeStart}{Separator}{totalRounds}{Separator}{exercise}";
