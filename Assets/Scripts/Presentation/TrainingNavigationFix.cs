@@ -49,6 +49,10 @@ namespace Entrenamiento.Presentation
                 canvas.gameObject.AddComponent<ExerciseSelectionController>();
             if (canvas.GetComponent<ExerciseRuntimeEnhancer>() == null)
                 canvas.gameObject.AddComponent<ExerciseRuntimeEnhancer>();
+            if (canvas.GetComponent<SoloTrainingModeController>() == null)
+                canvas.gameObject.AddComponent<SoloTrainingModeController>();
+            if (canvas.GetComponent<SoloHomeLayoutFix>() == null)
+                canvas.gameObject.AddComponent<SoloHomeLayoutFix>();
             if (canvas.GetComponent<TrainingOverlayOrderFix>() == null)
                 canvas.gameObject.AddComponent<TrainingOverlayOrderFix>();
             if (canvas.GetComponent<TrainingNavigationFix>() == null)
