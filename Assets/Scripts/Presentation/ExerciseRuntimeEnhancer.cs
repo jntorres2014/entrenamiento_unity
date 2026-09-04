@@ -9,8 +9,8 @@ using UnityEngine.UI;
 namespace Entrenamiento.Presentation
 {
     /// <summary>
-    /// Capa Unity para los presets: muestra la consigna en el host y programa
-    /// el cambio de estímulo de Finta Cognitiva.
+    /// Capa Unity para los presets: muestra la consigna en el host, programa
+    /// Finta Cognitiva y etiqueta el resumen final con el ejercicio ejecutado.
     /// </summary>
     public sealed class ExerciseRuntimeEnhancer : MonoBehaviour
     {
@@ -113,6 +113,15 @@ namespace Entrenamiento.Presentation
                 _fakeCoroutine = null;
             }
             if (_cueCard != null) _cueCard.gameObject.SetActive(false);
+
+            var summaryGo = FindDeep("SummaryLabel");
+            var summary = summaryGo != null ? summaryGo.GetComponent<TMP_Text>() : null;
+            if (summary != null && _coordinator != null)
+            {
+                string title = ExerciseSelection.Name(_coordinator.Config.Exercise);
+                string rule = ExerciseSelection.Rule(_coordinator.Config.Exercise);
+                summary.text = $"<color=#FF7A32><b>{title}</b></color>\n<size=70%><color=#A8B2C1>{rule}</color></size>\n\n" + summary.text;
+            }
         }
 
         private void EnsureCueCard()
