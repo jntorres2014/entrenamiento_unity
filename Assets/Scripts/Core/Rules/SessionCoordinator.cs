@@ -5,25 +5,11 @@ using Entrenamiento.Core.Models;
 namespace Entrenamiento.Core.Rules
 {
     /// <summary>
-    /// Lógica del HOST para una sesión distribuida por rondas: en cada ronda
-    /// elige una estación al azar (evitando repetir la anterior), le manda ARM,
-    /// espera el HIT (o el vencimiento del timeout, avisado por el bootstrap),
-    /// y al completar todas las rondas emite el resumen.
-    ///
-    /// Modos (ver SessionConfig):
-    ///  - Clásico: todas las rondas son "go" (hay que tocar). Colores por
-    ///    estación o fijo.
-    ///  - Go/No-Go: algunas rondas son señuelo. Colores fijos: verde = tocar,
-    ///    rojo = quieto. Tocar el rojo es error; dejar pasar el verde (timeout)
-    ///    es error; quedarse quieto en el rojo es acierto.
-    ///
-    /// El host puede participar como estación (id LocalStationId). Esta clase
-    /// no sabe de red ni de Unity ni de relojes: emite mensajes por eventos y
-    /// el bootstrap maneja transporte y timers.
+    /// Coordinador del host. Soporta seis presets de entrenamiento y conserva
+    /// la API usada por TrainingNearbyBootstrap.
     /// </summary>
     public class SessionCoordinator
     {
-        /// <summary>Id reservado para "el host participando como estación".</summary>
         public const string LocalStationId = "local";
 
         private static readonly StationColor[] Palette =
@@ -31,25 +17,25 @@ namespace Entrenamiento.Core.Rules
             StationColor.Red, StationColor.Green, StationColor.Blue, StationColor.Yellow
         };
 
-        /// <summary>Mandar este payload a esta estación puntual (ARM/OFF).</summary>
         public event Action<string, string> OnSendToStation;
-
-        /// <summary>Mandar este payload a todas las estaciones (START/END).</summary>
         public event Action<string> OnBroadcast;
-
-        /// <summary>Arrancó una ronda: (ronda 1-based, stationId, color, esGo).</summary>
         public event Action<int, string, StationColor, bool> OnRoundStarted;
-
-        /// <summary>Se resolvió una ronda: (evento, ronda). Miss = error.</summary>
+        public event Action<int, string, StationColor, bool> OnStimulusChanged;
         public event Action<ReactionEvent, int> OnRoundCompleted;
-
-        /// <summary>Se completaron todas las rondas.</summary>
         public event Action OnSessionFinished;
 
         private readonly List<string> _stationIds;
         private readonly Dictionary<string, StationColor> _stationColors = new Dictionary<string, StationColor>();
+        private readonly HashSet<string> _activeStations = new HashSet<string>();
+        private readonly Dictionary<string, bool> _roundGoByStation = new Dictionary<string, bool>();
         private readonly List<ReactionEvent> _results = new List<ReactionEvent>();
         private readonly Random _rng;
+
+        private string _targetStationId;
+        private string _lastSingleStationId;
+        private StationColor _currentStimulusColor = StationColor.None;
+        private float _roundMaxElapsed;
+        private bool _cognitiveChangeApplied;
 
         public SessionConfig Config { get; }
         public int TotalRounds => Config.TotalRounds;
@@ -58,9 +44,10 @@ namespace Entrenamiento.Core.Rules
         public bool CurrentRoundIsGo { get; private set; }
         public bool IsRunning { get; private set; }
         public IReadOnlyList<ReactionEvent> Results => _results;
-
         public int HitCount { get; private set; }
         public int MissCount { get; private set; }
+        public StationColor CurrentStimulusColor => _currentStimulusColor;
+        public int ActiveStationCount => _activeStations.Count;
 
         public SessionCoordinator(IEnumerable<string> stationIds, SessionConfig config, Random rng)
         {
@@ -78,68 +65,75 @@ namespace Entrenamiento.Core.Rules
                 throw new ArgumentOutOfRangeException(nameof(config), "TotalRounds debe ser mayor a 0.");
             }
 
-            if (Config.IsGoNoGo && Config.TimeoutSeconds <= 0f)
-            {
-                throw new ArgumentException("El modo go/no-go necesita timeout mayor a 0.", nameof(config));
-            }
+            NormalizePresetConfig();
 
             for (int i = 0; i < _stationIds.Count; i++)
             {
                 _stationColors[_stationIds[i]] = Palette[i % Palette.Length];
             }
+
+            ExerciseRuntimeRegistry.CurrentCoordinator = this;
         }
 
-        // ------------------------------------------------------------------
-        // Arranque
-        // ------------------------------------------------------------------
+        private void NormalizePresetConfig()
+        {
+            switch (Config.Exercise)
+            {
+                case ExerciseMode.Reaction:
+                    Config.NoGoProbability = 0f;
+                    Config.FixedColor = StationColor.Green;
+                    break;
+                case ExerciseMode.AllSame:
+                    Config.NoGoProbability = 0f;
+                    Config.FixedColor = StationColor.Blue;
+                    break;
+                case ExerciseMode.Colors:
+                case ExerciseMode.Decision:
+                case ExerciseMode.CognitiveFake:
+                    Config.NoGoProbability = 0f;
+                    Config.FixedColor = null;
+                    break;
+                case ExerciseMode.Football:
+                    Config.NoGoProbability = 0f;
+                    Config.FixedColor = null;
+                    if (Config.TimeoutSeconds <= 0f)
+                    {
+                        Config.TimeoutSeconds = 3f;
+                    }
+                    break;
+            }
 
-        /// <summary>Anuncia + arranca de inmediato (sin cuenta regresiva).</summary>
+            if (Config.Exercise == ExerciseMode.CognitiveFake && Config.CognitiveChangeDelaySeconds <= 0f)
+            {
+                Config.CognitiveChangeDelaySeconds = 0.65f;
+            }
+        }
+
         public void Start()
         {
             AnnounceStart();
             BeginRounds();
         }
 
-        /// <summary>
-        /// Fase 1: anuncia la sesión (broadcast START) sin armar la primera ronda.
-        /// Permite que el bootstrap muestre una cuenta regresiva antes de
-        /// llamar a BeginRounds(). Las estaciones muestran su propia cuenta al
-        /// recibir START, así quedan aproximadamente sincronizadas.
-        /// </summary>
         public void AnnounceStart()
         {
-            if (IsRunning)
-            {
-                return;
-            }
+            if (IsRunning) return;
 
             IsRunning = true;
             CurrentRound = 0;
             HitCount = 0;
             MissCount = 0;
             _results.Clear();
+            _activeStations.Clear();
             OnBroadcast?.Invoke(TrainingProtocol.FormatStart(TotalRounds));
         }
 
-        /// <summary>Fase 2: arma la primera ronda.</summary>
         public void BeginRounds()
         {
-            if (!IsRunning || CurrentRound > 0)
-            {
-                return;
-            }
-
+            if (!IsRunning || CurrentRound > 0) return;
             NextRound();
         }
 
-        // ------------------------------------------------------------------
-        // Resolución de rondas
-        // ------------------------------------------------------------------
-
-        /// <summary>
-        /// Procesa un payload que llegó de una estación (o del agente local).
-        /// Solo acepta HIT de la estación armada y de la ronda vigente.
-        /// </summary>
         public void HandleStationPayload(string stationId, string payload)
         {
             if (!IsRunning ||
@@ -147,42 +141,138 @@ namespace Entrenamiento.Core.Rules
                 type != TrainingProtocol.TypeHit ||
                 args.Length < 2 ||
                 !TrainingProtocol.TryParseInt(args[0], out int round) ||
-                !TrainingProtocol.TryParseInt(args[1], out int elapsedMs))
+                !TrainingProtocol.TryParseInt(args[1], out int elapsedMs) ||
+                round != CurrentRound ||
+                !_activeStations.Contains(stationId))
             {
                 return;
             }
 
-            if (stationId != ArmedStationId || round != CurrentRound)
+            float elapsedSeconds = Math.Max(0, elapsedMs) / 1000f;
+
+            switch (Config.Exercise)
+            {
+                case ExerciseMode.AllSame:
+                    HandleAllSameHit(stationId, elapsedSeconds);
+                    return;
+
+                case ExerciseMode.Colors:
+                    HandleColorChoiceHit(stationId, elapsedSeconds);
+                    return;
+
+                default:
+                    if (stationId != ArmedStationId)
+                    {
+                        return;
+                    }
+
+                    bool isGo = _roundGoByStation.TryGetValue(stationId, out bool go) ? go : CurrentRoundIsGo;
+                    CancelActiveStations(false);
+                    ResolveRound(new ReactionEvent(
+                        stationId,
+                        isGo ? ReactionResult.Hit : ReactionResult.Miss,
+                        elapsedSeconds));
+                    return;
+            }
+        }
+
+        private void HandleAllSameHit(string stationId, float elapsedSeconds)
+        {
+            _roundMaxElapsed = Math.Max(_roundMaxElapsed, elapsedSeconds);
+            _activeStations.Remove(stationId);
+            _roundGoByStation.Remove(stationId);
+            OnSendToStation?.Invoke(stationId, TrainingProtocol.FormatOff(CurrentRound, false));
+
+            if (_activeStations.Count == 0)
+            {
+                ArmedStationId = null;
+                ResolveRound(new ReactionEvent("ALL", ReactionResult.Hit, _roundMaxElapsed));
+                return;
+            }
+
+            ArmedStationId = FirstActiveStation();
+        }
+
+        private void HandleColorChoiceHit(string stationId, float elapsedSeconds)
+        {
+            bool correct = stationId == _targetStationId;
+            CancelActiveStations(false);
+            ResolveRound(new ReactionEvent(
+                stationId,
+                correct ? ReactionResult.Hit : ReactionResult.Miss,
+                elapsedSeconds));
+        }
+
+        public void HandleRoundTimeout()
+        {
+            if (!IsRunning || _activeStations.Count == 0)
             {
                 return;
             }
 
-            // Go: tocar es acierto (con tiempo). No-go: tocar el señuelo es error.
-            var result = CurrentRoundIsGo ? ReactionResult.Hit : ReactionResult.Miss;
-            ResolveRound(new ReactionEvent(stationId, result, elapsedMs / 1000f));
+            if (Config.Exercise == ExerciseMode.Colors)
+            {
+                foreach (string id in SnapshotActiveStations())
+                {
+                    bool isTarget = id == _targetStationId;
+                    OnSendToStation?.Invoke(id, TrainingProtocol.FormatOff(CurrentRound, isTarget));
+                }
+                _activeStations.Clear();
+                _roundGoByStation.Clear();
+                ResolveRound(new ReactionEvent(_targetStationId ?? "target", ReactionResult.Miss, 0f));
+                return;
+            }
+
+            if (Config.Exercise == ExerciseMode.AllSame)
+            {
+                CancelActiveStations(true);
+                ResolveRound(new ReactionEvent("ALL", ReactionResult.Miss, 0f));
+                return;
+            }
+
+            string active = ArmedStationId;
+            bool isGo = CurrentRoundIsGo;
+            CancelActiveStations(true);
+            ResolveRound(new ReactionEvent(
+                active ?? "station",
+                isGo ? ReactionResult.Miss : ReactionResult.Hit,
+                0f));
         }
 
         /// <summary>
-        /// El bootstrap avisa que venció el tiempo de la ronda vigente.
-        /// Go: no tocó a tiempo = error. No-go: se quedó quieto = acierto.
-        /// Manda OFF a la estación armada para que se apague.
+        /// Se llama desde la capa Unity durante Finta Cognitiva. Mantiene el pod
+        /// activo, cambia su color y reinicia el cronómetro del StationAgent.
         /// </summary>
-        public void HandleRoundTimeout()
+        public bool TriggerCognitiveFakeChange()
         {
-            if (!IsRunning || ArmedStationId == null)
+            if (!IsRunning ||
+                Config.Exercise != ExerciseMode.CognitiveFake ||
+                _cognitiveChangeApplied ||
+                ArmedStationId == null ||
+                !_activeStations.Contains(ArmedStationId))
             {
-                return;
+                return false;
             }
 
-            OnSendToStation?.Invoke(ArmedStationId, TrainingProtocol.FormatOff(CurrentRound));
+            StationColor newColor = RandomColorDifferentFrom(_currentStimulusColor);
+            _currentStimulusColor = newColor;
+            _cognitiveChangeApplied = true;
+            CurrentRoundIsGo = true;
+            _roundGoByStation[ArmedStationId] = true;
 
-            var result = CurrentRoundIsGo ? ReactionResult.Miss : ReactionResult.Hit;
-            ResolveRound(new ReactionEvent(ArmedStationId, result, 0f));
+            OnSendToStation?.Invoke(
+                ArmedStationId,
+                TrainingProtocol.FormatChange(CurrentRound, newColor, true));
+            OnStimulusChanged?.Invoke(CurrentRound, ArmedStationId, newColor, true);
+            return true;
         }
 
         private void ResolveRound(ReactionEvent reactionEvent)
         {
             ArmedStationId = null;
+            _targetStationId = null;
+            _activeStations.Clear();
+            _roundGoByStation.Clear();
             _results.Add(reactionEvent);
 
             if (reactionEvent.Result == ReactionResult.Hit)
@@ -206,15 +296,10 @@ namespace Entrenamiento.Core.Rules
             }
         }
 
-        // ------------------------------------------------------------------
-        // Estadísticas (solo aciertos con tiempo real, > 0)
-        // ------------------------------------------------------------------
-
         public float AverageSeconds()
         {
             float sum = 0f;
             int count = 0;
-
             foreach (var r in _results)
             {
                 if (r.Result == ReactionResult.Hit && r.ReactionTimeSeconds > 0f)
@@ -223,14 +308,12 @@ namespace Entrenamiento.Core.Rules
                     count++;
                 }
             }
-
             return count == 0 ? 0f : sum / count;
         }
 
         public float BestSeconds()
         {
             float best = float.MaxValue;
-
             foreach (var r in _results)
             {
                 if (r.Result == ReactionResult.Hit && r.ReactionTimeSeconds > 0f &&
@@ -239,49 +322,192 @@ namespace Entrenamiento.Core.Rules
                     best = r.ReactionTimeSeconds;
                 }
             }
-
             return best == float.MaxValue ? 0f : best;
         }
 
         public StationColor GetStationColor(string stationId) =>
-            _stationColors.TryGetValue(stationId, out var c) ? c : StationColor.None;
-
-        // ------------------------------------------------------------------
-        // Internas
-        // ------------------------------------------------------------------
+            _stationColors.TryGetValue(stationId, out var color) ? color : StationColor.None;
 
         private void NextRound()
         {
             CurrentRound++;
+            _roundMaxElapsed = 0f;
+            _cognitiveChangeApplied = false;
+            _currentStimulusColor = StationColor.None;
+            _targetStationId = null;
+            _activeStations.Clear();
+            _roundGoByStation.Clear();
+
+            switch (Config.Exercise)
+            {
+                case ExerciseMode.Reaction:
+                    ArmSingle(StationColor.Green, true);
+                    break;
+
+                case ExerciseMode.AllSame:
+                    ArmAllSame();
+                    break;
+
+                case ExerciseMode.Colors:
+                    ArmColorChoice();
+                    break;
+
+                case ExerciseMode.Decision:
+                    ArmSingle(RandomColor(), true);
+                    break;
+
+                case ExerciseMode.CognitiveFake:
+                    ArmSingle(RandomColor(), true);
+                    break;
+
+                case ExerciseMode.Football:
+                    ArmFootball();
+                    break;
+
+                default:
+                    ArmSingle(Config.FixedColor ?? StationColor.Green, true);
+                    break;
+            }
+        }
+
+        private void ArmSingle(StationColor color, bool isGo)
+        {
+            string stationId = PickSingleStation();
+            _activeStations.Add(stationId);
+            _roundGoByStation[stationId] = isGo;
+            _targetStationId = stationId;
+            ArmedStationId = stationId;
+            CurrentRoundIsGo = isGo;
+            _currentStimulusColor = color;
+
+            OnSendToStation?.Invoke(stationId, TrainingProtocol.FormatArm(CurrentRound, color, isGo));
+            OnRoundStarted?.Invoke(CurrentRound, stationId, color, isGo);
+        }
+
+        private void ArmAllSame()
+        {
+            CurrentRoundIsGo = true;
+            _currentStimulusColor = StationColor.Blue;
+
+            foreach (string stationId in _stationIds)
+            {
+                _activeStations.Add(stationId);
+                _roundGoByStation[stationId] = true;
+                OnSendToStation?.Invoke(
+                    stationId,
+                    TrainingProtocol.FormatArm(CurrentRound, StationColor.Blue, true));
+            }
+
+            ArmedStationId = FirstActiveStation();
+            OnRoundStarted?.Invoke(CurrentRound, "ALL", StationColor.Blue, true);
+        }
+
+        private void ArmColorChoice()
+        {
+            int targetIndex = _rng.Next(_stationIds.Count);
+            _targetStationId = _stationIds[targetIndex];
+            CurrentRoundIsGo = true;
+
+            StationColor targetColor = StationColor.None;
+            for (int i = 0; i < _stationIds.Count; i++)
+            {
+                string stationId = _stationIds[i];
+                StationColor color = Palette[i % Palette.Length];
+                _activeStations.Add(stationId);
+
+                // Todos quedan táctiles: el coordinador decide si fue el color correcto.
+                _roundGoByStation[stationId] = true;
+                OnSendToStation?.Invoke(
+                    stationId,
+                    TrainingProtocol.FormatArm(CurrentRound, color, true));
+
+                if (i == targetIndex)
+                {
+                    targetColor = color;
+                }
+            }
+
+            ArmedStationId = _targetStationId;
+            _currentStimulusColor = targetColor;
+            OnRoundStarted?.Invoke(CurrentRound, _targetStationId, targetColor, true);
+        }
+
+        private void ArmFootball()
+        {
+            int pick = _rng.Next(3);
+            StationColor color = pick == 0
+                ? StationColor.Green
+                : pick == 1
+                    ? StationColor.Blue
+                    : StationColor.Red;
+            bool isGo = color != StationColor.Red;
+            ArmSingle(color, isGo);
+        }
+
+        private string PickSingleStation()
+        {
+            if (_stationIds.Count == 1)
+            {
+                _lastSingleStationId = _stationIds[0];
+                return _stationIds[0];
+            }
 
             var candidates = new List<string>(_stationIds);
-            if (candidates.Count > 1 && _results.Count > 0)
+            if (!string.IsNullOrEmpty(_lastSingleStationId))
             {
-                candidates.Remove(_results[_results.Count - 1].StationId);
+                candidates.Remove(_lastSingleStationId);
             }
 
-            ArmedStationId = candidates[_rng.Next(candidates.Count)];
-            CurrentRoundIsGo = !Config.IsGoNoGo || _rng.NextDouble() >= Config.NoGoProbability;
+            string selected = candidates[_rng.Next(candidates.Count)];
+            _lastSingleStationId = selected;
+            return selected;
+        }
 
-            StationColor color;
-            if (Config.IsGoNoGo)
-            {
-                // Regla fija y fácil de explicar: verde = tocar, rojo = quieto.
-                color = CurrentRoundIsGo ? StationColor.Green : StationColor.Red;
-            }
-            else
-            {
-                color = Config.FixedColor ?? GetStationColor(ArmedStationId);
-            }
+        private StationColor RandomColor()
+        {
+            return Palette[_rng.Next(Palette.Length)];
+        }
 
-            OnSendToStation?.Invoke(ArmedStationId,
-                TrainingProtocol.FormatArm(CurrentRound, color, CurrentRoundIsGo));
-            OnRoundStarted?.Invoke(CurrentRound, ArmedStationId, color, CurrentRoundIsGo);
+        private StationColor RandomColorDifferentFrom(StationColor current)
+        {
+            if (current == StationColor.None) return RandomColor();
+
+            StationColor selected;
+            do
+            {
+                selected = RandomColor();
+            } while (selected == current);
+            return selected;
+        }
+
+        private string FirstActiveStation()
+        {
+            foreach (string id in _activeStations)
+            {
+                return id;
+            }
+            return null;
+        }
+
+        private List<string> SnapshotActiveStations()
+        {
+            return new List<string>(_activeStations);
+        }
+
+        private void CancelActiveStations(bool timedOut)
+        {
+            foreach (string id in SnapshotActiveStations())
+            {
+                OnSendToStation?.Invoke(id, TrainingProtocol.FormatOff(CurrentRound, timedOut));
+            }
+            _activeStations.Clear();
+            _roundGoByStation.Clear();
         }
 
         private void Finish()
         {
             IsRunning = false;
+            CancelActiveStations(false);
             int avgMs = (int)(AverageSeconds() * 1000f);
             int bestMs = (int)(BestSeconds() * 1000f);
             OnBroadcast?.Invoke(TrainingProtocol.FormatEnd(HitCount, MissCount, avgMs, bestMs));
