@@ -50,9 +50,18 @@ namespace Entrenamiento.Core.Rules
                 case TrainingProtocol.TypeOff:
                     if (IsArmed)
                     {
+                        bool timedOut = true;
+                        if (args.Length >= 2 && TrainingProtocol.TryParseInt(args[1], out int timeoutFlag))
+                        {
+                            timedOut = timeoutFlag != 0;
+                        }
+
                         IsArmed = false;
                         _stopwatch.Stop();
-                        OnRoundTimedOut?.Invoke(LastArmWasGo);
+                        if (timedOut)
+                        {
+                            OnRoundTimedOut?.Invoke(LastArmWasGo);
+                        }
                     }
                     break;
 
