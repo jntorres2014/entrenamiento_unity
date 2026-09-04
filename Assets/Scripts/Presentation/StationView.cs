@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using Entrenamiento.Core.Models;
+using Entrenamiento.Core.Rules;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -9,8 +10,8 @@ using UnityEngine.UI;
 namespace Entrenamiento.Presentation
 {
     /// <summary>
-    /// Pantalla táctil de reacción. Muestra el color de la estación y un prompt
-    /// coherente con GO / NO-GO, sin contener reglas de negocio.
+    /// Pantalla táctil del pod. Además del color, muestra la consigna específica
+    /// del preset sincronizado por el host.
     /// </summary>
     [RequireComponent(typeof(Image))]
     public class StationView : MonoBehaviour, IPointerClickHandler
@@ -57,7 +58,7 @@ namespace Entrenamiento.Presentation
             }
 
             ConfigureText(_promptLabel, 120f, FontStyles.Bold, TextAlignmentOptions.Center);
-            SetRect(_promptLabel.rectTransform, 0.10f, 0.405f, 0.90f, 0.615f);
+            SetRect(_promptLabel.rectTransform, 0.08f, 0.405f, 0.92f, 0.615f);
 
             if (_actionLabel == null)
             {
@@ -81,7 +82,7 @@ namespace Entrenamiento.Presentation
             ConfigureText(_actionLabel, 34f, FontStyles.Bold, TextAlignmentOptions.Center);
             _actionLabel.characterSpacing = 2f;
             _actionLabel.color = new Color(1f, 1f, 1f, 0.88f);
-            SetRect(_actionLabel.rectTransform, 0.12f, 0.335f, 0.88f, 0.405f);
+            SetRect(_actionLabel.rectTransform, 0.10f, 0.325f, 0.90f, 0.405f);
         }
 
         public void SetColor(StationColor color)
@@ -89,30 +90,98 @@ namespace Entrenamiento.Presentation
             EnsureImage();
             _backgroundImage.color = StationColorPalette.ToUnityColor(color);
 
-            // TrainingNearbyBootstrap mantiene el dato real GO/NO-GO dentro del
-            // StationAgent. Lo leemos solo para presentación, sin duplicar reglas.
-            if (TryReadCurrentGoFlag(out bool isGo))
-            {
-                SetPrompt(isGo);
-            }
-            else
-            {
-                SetPrompt(true);
-            }
+            bool isGo = true;
+            TryReadCurrentGoFlag(out isGo);
+            SetPromptForExercise(color, isGo);
         }
 
         public void SetPrompt(bool isGo)
         {
+            SetPromptForExercise(StationColor.None, isGo);
+        }
+
+        private void SetPromptForExercise(StationColor color, bool isGo)
+        {
             EnsurePrompt();
 
-            _promptLabel.text = isGo ? "¡TOCÁ!" : "QUIETO";
-            _actionLabel.text = isGo ? "REACCIONÁ AHORA" : "NO TOQUES LA PANTALLA";
+            string prompt;
+            string action;
+            bool pulse = isGo;
 
-            var pulse = _promptLabel.GetComponent<PulseScale>();
-            if (pulse != null)
+            switch (ExerciseSelection.Current)
             {
-                pulse.enabled = isGo;
-                if (!isGo) _promptLabel.transform.localScale = Vector3.one;
+                case ExerciseMode.AllSame:
+                    prompt = "¡TOCÁ!";
+                    action = "APAGÁ ESTE POD";
+                    pulse = true;
+                    break;
+
+                case ExerciseMode.Colors:
+                    prompt = "COLOR";
+                    action = "BUSCÁ EL COLOR INDICADO";
+                    pulse = false;
+                    break;
+
+                case ExerciseMode.Decision:
+                    prompt = DirectionFor(color);
+                    action = "EJECUTÁ LA DIRECCIÓN Y TOCÁ";
+                    pulse = true;
+                    break;
+
+                case ExerciseMode.CognitiveFake:
+                    prompt = DirectionFor(color);
+                    action = "ATENTO: LA CONSIGNA PUEDE CAMBIAR";
+                    pulse = true;
+                    break;
+
+                case ExerciseMode.Football:
+                    if (color == StationColor.Green)
+                    {
+                        prompt = "DERECHO";
+                        action = "TOCÁ CON PIE DERECHO";
+                        pulse = true;
+                    }
+                    else if (color == StationColor.Blue)
+                    {
+                        prompt = "IZQUIERDO";
+                        action = "TOCÁ CON PIE IZQUIERDO";
+                        pulse = true;
+                    }
+                    else
+                    {
+                        prompt = "QUIETO";
+                        action = "ROJO = NO TOCAR";
+                        pulse = false;
+                    }
+                    break;
+
+                default:
+                    prompt = isGo ? "¡TOCÁ!" : "QUIETO";
+                    action = isGo ? "REACCIONÁ AHORA" : "NO TOQUES LA PANTALLA";
+                    pulse = isGo;
+                    break;
+            }
+
+            _promptLabel.text = prompt;
+            _actionLabel.text = action;
+
+            var pulseScale = _promptLabel.GetComponent<PulseScale>();
+            if (pulseScale != null)
+            {
+                pulseScale.enabled = pulse;
+                if (!pulse) _promptLabel.transform.localScale = Vector3.one;
+            }
+        }
+
+        private static string DirectionFor(StationColor color)
+        {
+            switch (color)
+            {
+                case StationColor.Green: return "AVANZÁ";
+                case StationColor.Red: return "RETROCEDÉ";
+                case StationColor.Blue: return "IZQUIERDA";
+                case StationColor.Yellow: return "DERECHA";
+                default: return "¡MOVETE!";
             }
         }
 
