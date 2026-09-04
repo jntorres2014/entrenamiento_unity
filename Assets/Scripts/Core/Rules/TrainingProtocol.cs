@@ -5,9 +5,9 @@ using Entrenamiento.Core.Models;
 namespace Entrenamiento.Core.Rules
 {
     /// <summary>
-    /// Protocolo de aplicación entre host y estaciones. Mantiene los mensajes
-    /// históricos y suma CHANGE para cambiar un estímulo sin cerrar la ronda.
-    /// OFF acepta un flag opcional: 1=timeout, 0=apagado silencioso.
+    /// Protocolo de aplicación entre host y estaciones.
+    /// START incluye opcionalmente el preset para sincronizar la UI de los pods.
+    /// OFF: 1=timeout, 0=apagado silencioso.
     /// </summary>
     public static class TrainingProtocol
     {
@@ -22,6 +22,9 @@ namespace Entrenamiento.Core.Rules
 
         public static string FormatStart(int totalRounds) =>
             $"{TypeStart}{Separator}{totalRounds}";
+
+        public static string FormatStart(int totalRounds, ExerciseMode exercise) =>
+            $"{TypeStart}{Separator}{totalRounds}{Separator}{exercise}";
 
         public static string FormatArm(int round, StationColor color, bool isGo) =>
             $"{TypeArm}{Separator}{round}{Separator}{color}{Separator}{(isGo ? 1 : 0)}";
@@ -62,5 +65,8 @@ namespace Entrenamiento.Core.Rules
 
         public static bool TryParseColor(string value, out StationColor color) =>
             Enum.TryParse(value, out color);
+
+        public static bool TryParseExercise(string value, out ExerciseMode exercise) =>
+            Enum.TryParse(value, out exercise);
     }
 }
