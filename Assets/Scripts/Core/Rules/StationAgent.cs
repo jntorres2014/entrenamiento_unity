@@ -35,6 +35,10 @@ namespace Entrenamiento.Core.Rules
                 case TrainingProtocol.TypeStart:
                     if (args.Length >= 1 && TrainingProtocol.TryParseInt(args[0], out int total))
                     {
+                        if (args.Length >= 2 && TrainingProtocol.TryParseExercise(args[1], out ExerciseMode exercise))
+                        {
+                            ExerciseSelection.Current = exercise;
+                        }
                         OnSessionStarted?.Invoke(total);
                     }
                     break;
