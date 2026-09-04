@@ -8,7 +8,7 @@ namespace Entrenamiento.Presentation
 {
     /// <summary>
     /// Coordina la zona inferior de Home C independientemente del orden en que
-    /// se creen Camera Training y Solo Training.
+    /// se creen Camera Training y Solo Training, y aclara los caminos SOLO/PODS.
     /// </summary>
     public sealed class SoloHomeLayoutFix : MonoBehaviour
     {
@@ -81,6 +81,23 @@ namespace Entrenamiento.Presentation
                 camera.transform.SetAsLastSibling();
                 solo.transform.SetAsLastSibling();
             }
+
+            RelabelRoleButton("HostRoleButton",
+                "CON PODS\n<size=67%><color=#A8B2C1>Crear y dirigir una sesión</color></size>");
+            RelabelRoleButton("StationRoleButton",
+                "ESTACIÓN\n<size=67%><color=#A8B2C1>Usar este teléfono como pod</color></size>");
+        }
+
+        private void RelabelRoleButton(string objectName, string value)
+        {
+            var go = FindDeep(objectName);
+            if (go == null) return;
+            var label = go.GetComponentInChildren<TMP_Text>(true);
+            if (label == null) return;
+            label.text = value;
+            label.alignment = TextAlignmentOptions.BottomLeft;
+            label.fontSizeMax = 24f;
+            label.fontSizeMin = 14f;
         }
 
         private GameObject FindDeep(string objectName)
