@@ -4,9 +4,10 @@ using UnityEngine;
 namespace Entrenamiento.Presentation
 {
     /// <summary>
-    /// Convierte el JPG histórico del logo en una textura RGBA transparente en
-    /// runtime. Solo elimina el fondo claro conectado a los bordes, por lo que
-    /// conserva blancos internos que formen parte del dibujo.
+    /// Genera una variante dark-mode del logo histórico en runtime:
+    /// elimina el fondo claro conectado a los bordes, conserva el verde de marca
+    /// y convierte las zonas negras/grises del isotipo a blanco suave para que
+    /// sigan siendo legibles sobre la interfaz oscura.
     /// </summary>
     public static class TransparentBrandLogo
     {
@@ -69,9 +70,25 @@ namespace Entrenamiento.Presentation
                 }
             }
 
+            // Variante de marca para fondo oscuro: el negro del isotipo pasa a
+            // blanco verdoso, pero el verde saturado se conserva intacto.
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                if (pixels[i].a == 0) continue;
+                int max = Mathf.Max(pixels[i].r, Mathf.Max(pixels[i].g, pixels[i].b));
+                int min = Mathf.Min(pixels[i].r, Mathf.Min(pixels[i].g, pixels[i].b));
+                bool darkNeutral = max <= 110 && max - min <= 42;
+                if (darkNeutral)
+                {
+                    pixels[i].r = 238;
+                    pixels[i].g = 246;
+                    pixels[i].b = 242;
+                }
+            }
+
             _texture = new Texture2D(width, height, TextureFormat.RGBA32, false)
             {
-                name = "TrainingBrandLogoTransparent",
+                name = "TrainingBrandLogoTransparentDark",
                 filterMode = FilterMode.Bilinear,
                 wrapMode = TextureWrapMode.Clamp
             };
