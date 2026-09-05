@@ -49,6 +49,8 @@ namespace Entrenamiento.Presentation
             AddIfMissing<MobileBackGestureController>(canvas);
             AddIfMissing<MobileNavigationVisualFix>(canvas);
             AddIfMissing<ProOverlayNavigationController>(canvas);
+            AddIfMissing<ProLogoLayoutFix>(canvas);
+            AddIfMissing<AndroidSystemUiPro>(canvas);
             AddIfMissing<TrainingNavigationFix>(canvas);
         }
 
