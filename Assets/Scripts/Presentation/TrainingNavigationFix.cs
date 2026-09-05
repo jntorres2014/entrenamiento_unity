@@ -55,6 +55,8 @@ namespace Entrenamiento.Presentation
                 canvas.gameObject.AddComponent<SoloHomeLayoutFix>();
             if (canvas.GetComponent<TrainingOverlayOrderFix>() == null)
                 canvas.gameObject.AddComponent<TrainingOverlayOrderFix>();
+            if (canvas.GetComponent<MobileBackGestureController>() == null)
+                canvas.gameObject.AddComponent<MobileBackGestureController>();
             if (canvas.GetComponent<TrainingNavigationFix>() == null)
                 canvas.gameObject.AddComponent<TrainingNavigationFix>();
         }
