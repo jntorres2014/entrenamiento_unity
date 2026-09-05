@@ -45,6 +45,7 @@ namespace Entrenamiento.Presentation
             AddIfMissing<DeportivoProSessionSkin>(canvas);
             AddIfMissing<TrainingHistoryTracker>(canvas);
             AddIfMissing<TrainingProgressController>(canvas);
+            AddIfMissing<ExerciseCueProLayoutFix>(canvas);
             AddIfMissing<TrainingOverlayOrderFix>(canvas);
             AddIfMissing<MobileBackGestureController>(canvas);
             AddIfMissing<MobileNavigationVisualFix>(canvas);
