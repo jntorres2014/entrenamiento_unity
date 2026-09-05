@@ -8,14 +8,9 @@ using UnityEngine.UI;
 
 namespace Entrenamiento.Presentation
 {
-    /// <summary>
-    /// Pantalla MI PROGRESO del concepto Deportivo Pro. Consume el historial
-    /// local generado por TrainingHistoryTracker y ofrece resumen + sesiones.
-    /// </summary>
     public sealed class TrainingProgressController : MonoBehaviour
     {
         private static TrainingProgressController _instance;
-
         private Canvas _canvas;
         private Sprite _roundedSprite;
         private Button _homeProgressButton;
@@ -24,9 +19,9 @@ namespace Entrenamiento.Presentation
         private GameObject _sessionsView;
         private Button _summaryTab;
         private Button _sessionsTab;
-
         private TMP_Text _accuracyValue;
         private TMP_Text _sessionsValue;
+        private TMP_Text _miniAccuracy;
         private TMP_Text _bestValue;
         private readonly List<Image> _bars = new List<Image>();
         private readonly List<TMP_Text> _recentRows = new List<TMP_Text>();
@@ -119,7 +114,6 @@ namespace Entrenamiento.Presentation
 
             var logo = CreateRawImage(_root.transform, "ProgressLogo", TransparentBrandLogo.Texture);
             SetRect(logo.rectTransform, 0.80f, 0.89f, 0.94f, 0.97f);
-            logo.preserveAspect = true;
 
             var kicker = CreateText(_root.transform, "Kicker", "DEPORTIVO PRO", 13f, FontStyles.Bold, TextAlignmentOptions.Left);
             SetRect(kicker.rectTransform, 0.195f, 0.925f, 0.62f, 0.96f);
@@ -170,9 +164,8 @@ namespace Entrenamiento.Presentation
             }
 
             _sessionsValue = CreateStatCard(_summaryView.transform, "Sessions", "SESIONES", 0f, 0.47f, 0.31f, 0.63f, UiTheme.Accent);
-            var precisionMini = CreateStatCard(_summaryView.transform, "PrecisionMini", "PRECISIÓN", 0.345f, 0.47f, 0.655f, 0.63f, UiTheme.Positive);
+            _miniAccuracy = CreateStatCard(_summaryView.transform, "PrecisionMini", "PRECISIÓN", 0.345f, 0.47f, 0.655f, 0.63f, UiTheme.Positive);
             _bestValue = CreateStatCard(_summaryView.transform, "Best", "MEJOR TIEMPO", 0.69f, 0.47f, 1f, 0.63f, UiTheme.Info);
-            precisionMini.name = "ProgressMiniAccuracy";
 
             var recentTitle = CreateText(_summaryView.transform, "RecentTitle", "ÚLTIMAS SESIONES", 15f, FontStyles.Bold, TextAlignmentOptions.Left);
             SetRect(recentTitle.rectTransform, 0f, 0.395f, 0.55f, 0.445f);
@@ -185,7 +178,6 @@ namespace Entrenamiento.Presentation
                 SetRect(row.rectTransform, 0f, yMax - 0.095f, 1f, yMax);
                 var text = CreateText(row.transform, "Text", "", 14f, FontStyles.Normal, TextAlignmentOptions.MidlineLeft);
                 SetRect(text.rectTransform, 0.04f, 0.12f, 0.96f, 0.88f);
-                text.color = UiTheme.TextPrimary;
                 _recentRows.Add(text);
             }
         }
@@ -208,7 +200,6 @@ namespace Entrenamiento.Presentation
         {
             _sessionsView = CreateContainer(_root.transform, "ProgressSessionsView");
             SetRect(_sessionsView.GetComponent<RectTransform>(), 0.055f, 0.055f, 0.945f, 0.755f);
-
             var intro = CreateText(_sessionsView.transform, "Intro", "HISTORIAL RECIENTE", 15f, FontStyles.Bold, TextAlignmentOptions.Left);
             SetRect(intro.rectTransform, 0f, 0.93f, 0.65f, 1f);
             intro.color = UiTheme.TextSecondary;
@@ -222,7 +213,6 @@ namespace Entrenamiento.Presentation
                 SetRect(text.rectTransform, 0.045f, 0.10f, 0.955f, 0.90f);
                 _sessionRows.Add(text);
             }
-
             var note = CreateText(_sessionsView.transform, "Note", "El historial se guarda en este teléfono.", 12.5f, FontStyles.Normal, TextAlignmentOptions.Center);
             SetRect(note.rectTransform, 0.10f, 0.005f, 0.90f, 0.06f);
             note.color = UiTheme.TextMuted;
@@ -231,7 +221,6 @@ namespace Entrenamiento.Presentation
         private void Refresh()
         {
             var entries = TrainingHistoryStore.Load();
-
             float avgAccuracy = 0f;
             float best = float.MaxValue;
             foreach (var e in entries)
@@ -241,28 +230,26 @@ namespace Entrenamiento.Presentation
             }
             if (entries.Count > 0) avgAccuracy /= entries.Count;
 
-            if (_accuracyValue != null) _accuracyValue.text = entries.Count > 0 ? avgAccuracy.ToString("F0") + "%" : "--%";
+            string accuracyText = entries.Count > 0 ? avgAccuracy.ToString("F0") + "%" : "--%";
+            if (_accuracyValue != null) _accuracyValue.text = accuracyText;
             if (_sessionsValue != null) _sessionsValue.text = entries.Count.ToString();
+            if (_miniAccuracy != null) _miniAccuracy.text = entries.Count > 0 ? avgAccuracy.ToString("F0") + "%" : "--";
             if (_bestValue != null) _bestValue.text = best < float.MaxValue ? best.ToString("F2") + "s" : "--";
-
-            var mini = FindText(_summaryView, "Value", "ProgressMiniAccuracy");
-            if (mini != null) mini.text = entries.Count > 0 ? avgAccuracy.ToString("F0") + "%" : "--";
 
             for (int i = 0; i < _bars.Count; i++)
             {
                 float accuracy = 0f;
-                int index = Mathf.Min(entries.Count - 1, 6 - i);
-                if (entries.Count > 0 && index >= 0) accuracy = entries[index].Accuracy / 100f;
+                int index = entries.Count - 7 + i;
+                if (index >= 0 && index < entries.Count) accuracy = entries[index].Accuracy / 100f;
                 var fill = _bars[i].rectTransform;
                 fill.anchorMax = new Vector2(1f, Mathf.Clamp(accuracy, 0.08f, 1f));
                 _bars[i].color = accuracy >= 0.8f ? UiTheme.Accent : UiTheme.Info;
             }
 
             for (int i = 0; i < _recentRows.Count; i++)
-                _recentRows[i].text = i < entries.Count ? FormatEntry(entries[i], true) : "Sin sesión registrada";
-
+                _recentRows[i].text = i < entries.Count ? FormatEntry(entries[i], true) : "<color=#7F8B9A>Sin sesión registrada</color>";
             for (int i = 0; i < _sessionRows.Count; i++)
-                _sessionRows[i].text = i < entries.Count ? FormatEntry(entries[i], false) : "—";
+                _sessionRows[i].text = i < entries.Count ? FormatEntry(entries[i], false) : "<color=#7F8B9A>—</color>";
         }
 
         private static string FormatEntry(TrainingHistoryEntry entry, bool compact)
@@ -270,7 +257,6 @@ namespace Entrenamiento.Presentation
             string date = DateTimeOffset.FromUnixTimeSeconds(entry.unixSeconds).ToLocalTime().ToString("dd/MM  HH:mm");
             if (compact)
                 return "<b>" + entry.exercise + "</b>   <color=#76E800>" + entry.Accuracy.ToString("F0") + "%</color>\n<size=82%><color=#B7C0CC>" + entry.source + "  ·  " + date + (entry.averageSeconds > 0f ? "  ·  " + entry.averageSeconds.ToString("F2") + "s" : "") + "</color></size>";
-
             return "<b>" + entry.exercise + "</b>   <color=#76E800>" + entry.Accuracy.ToString("F0") + "%</color>\n<size=80%><color=#B7C0CC>" + entry.source + "  ·  " + date + "  ·  " + entry.hits + " aciertos / " + entry.misses + " errores" + (entry.bestSeconds > 0f ? "  ·  mejor " + entry.bestSeconds.ToString("F2") + "s" : "") + "</color></size>";
         }
 
@@ -310,11 +296,7 @@ namespace Entrenamiento.Presentation
             foreach (var button in GetComponentsInChildren<Button>(true))
             {
                 var image = button.GetComponent<Image>();
-                if (image != null && image.sprite != null)
-                {
-                    _roundedSprite = image.sprite;
-                    return;
-                }
+                if (image != null && image.sprite != null) { _roundedSprite = image.sprite; return; }
             }
         }
 
@@ -355,12 +337,15 @@ namespace Entrenamiento.Presentation
 
         private static RawImage CreateRawImage(Transform parent, string name, Texture texture)
         {
-            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
+            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage), typeof(AspectRatioFitter));
             go.transform.SetParent(parent, false);
             var image = go.GetComponent<RawImage>();
             image.texture = texture;
             image.color = Color.white;
             image.raycastTarget = false;
+            var fitter = go.GetComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            fitter.aspectRatio = texture != null && texture.height > 0 ? texture.width / (float)texture.height : 1f;
             return image;
         }
 
@@ -391,19 +376,7 @@ namespace Entrenamiento.Presentation
         private GameObject FindDeep(string objectName)
         {
             if (_canvas == null) return null;
-            foreach (var t in _canvas.GetComponentsInChildren<Transform>(true))
-                if (t.name == objectName) return t.gameObject;
-            return null;
-        }
-
-        private static TMP_Text FindText(GameObject root, string objectName, string parentName)
-        {
-            if (root == null) return null;
-            foreach (var text in root.GetComponentsInChildren<TMP_Text>(true))
-            {
-                if (text.name == objectName && text.transform.parent != null && text.transform.parent.name == parentName)
-                    return text;
-            }
+            foreach (var t in _canvas.GetComponentsInChildren<Transform>(true)) if (t.name == objectName) return t.gameObject;
             return null;
         }
 
