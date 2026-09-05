@@ -4,8 +4,7 @@ using UnityEngine.SceneManagement;
 namespace Entrenamiento.Presentation
 {
     /// <summary>
-    /// Integra las barras del sistema Android con el fondo oscuro de la app.
-    /// Evita la franja gris que cortaba visualmente la interfaz en los screenshots.
+    /// Integra las barras del sistema Android con el fondo Deportivo Pro.
     /// </summary>
     public sealed class AndroidSystemUiPro : MonoBehaviour
     {
@@ -36,7 +35,7 @@ namespace Entrenamiento.Presentation
                 using (var window = activity.Call<AndroidJavaObject>("getWindow"))
                 using (var decor = window.Call<AndroidJavaObject>("getDecorView"))
                 {
-                    int dark = unchecked((int)0xFF0B0F14);
+                    int dark = unchecked((int)0xFF070D0B);
                     window.Call("setStatusBarColor", dark);
                     window.Call("setNavigationBarColor", dark);
 
