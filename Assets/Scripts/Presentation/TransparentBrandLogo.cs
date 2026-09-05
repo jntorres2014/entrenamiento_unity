@@ -26,7 +26,7 @@ namespace Entrenamiento.Presentation
             Texture2D source = BrandLogo.Texture;
             if (source == null)
             {
-                _texture = Texture2D.whiteTexture as Texture2D;
+                _texture = Texture2D.whiteTexture;
                 return;
             }
 
@@ -90,8 +90,8 @@ namespace Entrenamiento.Presentation
 
         private static bool IsBackgroundLike(Color32 c)
         {
-            byte max = System.Math.Max(c.r, System.Math.Max(c.g, c.b));
-            byte min = System.Math.Min(c.r, System.Math.Min(c.g, c.b));
+            int max = Mathf.Max(c.r, Mathf.Max(c.g, c.b));
+            int min = Mathf.Min(c.r, Mathf.Min(c.g, c.b));
             return min >= 190 && max - min <= 26;
         }
     }
