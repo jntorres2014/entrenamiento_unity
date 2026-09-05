@@ -6,7 +6,7 @@ namespace Entrenamiento.Presentation
 {
     /// <summary>
     /// Última capa visual de navegación: un único Atrás contextual, dentro del
-    /// safe area y alineado con los headers Deportivo Pro.
+    /// safe area. No modifica el layout del selector Pro 2x3.
     /// </summary>
     public sealed class MobileNavigationVisualFix : MonoBehaviour
     {
@@ -59,10 +59,9 @@ namespace Entrenamiento.Presentation
 
             ApplyCompactSafeBackButtons();
 
-            if (exerciseSelector)
-                ReflowSelectorHeader("ExerciseSelectionPanel", "Eyebrow", "Title", "Subtitle");
+            // El selector CON PODS tiene layout propio 2x3 y no se toca acá.
             if (soloSelector)
-                ReflowSelectorHeader("SoloExerciseSelection", "Eyebrow", "Title", "Subtitle");
+                ReflowSoloHeader("SoloExerciseSelection", "Eyebrow", "Title", "Subtitle");
             if (soloOptions)
             {
                 var root = FindDeep("SoloOptionsPanel");
@@ -78,8 +77,8 @@ namespace Entrenamiento.Presentation
             float safeTop = safe.yMax / Screen.height;
             bool landscape = Screen.width > Screen.height;
 
-            float width = landscape ? 0.14f : 0.18f;
-            float height = landscape ? 0.09f : 0.056f;
+            float width = landscape ? 0.12f : 0.14f;
+            float height = landscape ? 0.085f : 0.052f;
             float xMin = Mathf.Clamp01(safeLeft + 0.025f);
             float xMax = Mathf.Clamp01(xMin + width);
             float yMax = Mathf.Clamp01(safeTop - 0.016f);
@@ -104,27 +103,23 @@ namespace Entrenamiento.Presentation
                 var label = go.GetComponentInChildren<TMP_Text>(true);
                 if (label != null)
                 {
-                    label.text = "←  ATRÁS";
-                    label.fontSizeMin = 12.5f;
-                    label.fontSizeMax = 16.5f;
+                    label.text = "←";
+                    label.fontSizeMin = 16f;
+                    label.fontSizeMax = 24f;
                     label.alignment = TextAlignmentOptions.Center;
                 }
-
                 go.transform.SetAsLastSibling();
             }
         }
 
-        private void ReflowSelectorHeader(string rootName, string eyebrowName, string titleName, string subtitleName)
+        private void ReflowSoloHeader(string rootName, string eyebrowName, string titleName, string subtitleName)
         {
             var root = FindDeep(rootName);
             if (root == null) return;
-
             var eyebrow = FindChildText(root, eyebrowName);
             if (eyebrow != null) SetRect(eyebrow.rectTransform, 0.195f, 0.915f, 0.84f, 0.95f);
-
             var title = FindChildText(root, titleName);
             if (title != null) SetRect(title.rectTransform, 0.055f, 0.835f, 0.94f, 0.895f);
-
             var subtitle = FindChildText(root, subtitleName);
             if (subtitle != null) SetRect(subtitle.rectTransform, 0.055f, 0.785f, 0.94f, 0.83f);
         }
@@ -138,16 +133,14 @@ namespace Entrenamiento.Presentation
         private GameObject FindDeep(string objectName)
         {
             if (_canvas == null) return null;
-            foreach (var t in _canvas.GetComponentsInChildren<Transform>(true))
-                if (t.name == objectName) return t.gameObject;
+            foreach (var t in _canvas.GetComponentsInChildren<Transform>(true)) if (t.name == objectName) return t.gameObject;
             return null;
         }
 
         private static TMP_Text FindChildText(GameObject root, string objectName)
         {
             if (root == null) return null;
-            foreach (var text in root.GetComponentsInChildren<TMP_Text>(true))
-                if (text.name == objectName) return text;
+            foreach (var text in root.GetComponentsInChildren<TMP_Text>(true)) if (text.name == objectName) return text;
             return null;
         }
 
@@ -160,9 +153,6 @@ namespace Entrenamiento.Presentation
             rect.offsetMax = Vector2.zero;
         }
 
-        private void OnDestroy()
-        {
-            Canvas.willRenderCanvases -= Apply;
-        }
+        private void OnDestroy() => Canvas.willRenderCanvases -= Apply;
     }
 }
