@@ -1,0 +1,1 @@
+Brand assets are stored in this folder. training_logo.jpg is loaded at runtime from Resources/Brand/training_logo.
