@@ -5,14 +5,12 @@ using UnityEngine.UI;
 namespace Entrenamiento.Presentation
 {
     /// <summary>
-    /// Feedback táctil y estilo visual común para los botones de la app.
-    /// La jerarquía de color se resuelve por el nombre del objeto para poder
-    /// modernizar la escena existente sin modificar la lógica ni referencias.
+    /// Feedback táctil de escala. Los controles Pro/Solo conservan el color que
+    /// define su layout; los controles legacy siguen recibiendo estilo común.
     /// </summary>
     public class ButtonPressScale : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
     {
         [SerializeField] private float pressedScale = 0.96f;
-
         private Vector3 _restScale;
 
         private void Awake()
@@ -27,57 +25,27 @@ namespace Entrenamiento.Presentation
             if (button == null) return;
 
             string objectName = gameObject.name.ToLowerInvariant();
-
-            // Los controles del modo SOLO se crean con una jerarquía visual propia
-            // (cards por ejercicio, zonas y CTA). Conservamos esos colores y usamos
-            // este componente únicamente para el feedback de escala al tocar.
-            if (objectName.StartsWith("solo"))
-            {
+            if (objectName.StartsWith("pro") || objectName.StartsWith("progress") ||
+                objectName.StartsWith("solo") || objectName.StartsWith("exercise_"))
                 return;
-            }
 
             if (objectName.Contains("reject") || objectName.Contains("cancel") || objectName.Contains("delete"))
-            {
                 TrainingUiStyler.StyleDanger(button);
-            }
             else if (objectName.Contains("accept") || objectName.Contains("confirm"))
-            {
                 TrainingUiStyler.StylePositive(button);
-            }
             else if (objectName.Contains("station") && objectName.Contains("role"))
-            {
                 TrainingUiStyler.StyleInfo(button);
-            }
             else if (objectName.Contains("artraining") || objectName.Contains("arprimary") ||
-                     objectName.Contains("cameraprimary") ||
-                     objectName.Contains("start") || objectName.Contains("host") || objectName.Contains("restart"))
-            {
+                     objectName.Contains("cameraprimary") || objectName.Contains("start") ||
+                     objectName.Contains("host") || objectName.Contains("restart"))
                 TrainingUiStyler.StylePrimary(button);
-            }
             else
-            {
                 TrainingUiStyler.StyleSecondary(button);
-            }
         }
 
-        public void OnPointerDown(PointerEventData eventData)
-        {
-            transform.localScale = _restScale * pressedScale;
-        }
-
-        public void OnPointerUp(PointerEventData eventData)
-        {
-            transform.localScale = _restScale;
-        }
-
-        public void OnPointerExit(PointerEventData eventData)
-        {
-            transform.localScale = _restScale;
-        }
-
-        private void OnDisable()
-        {
-            transform.localScale = _restScale;
-        }
+        public void OnPointerDown(PointerEventData eventData) => transform.localScale = _restScale * pressedScale;
+        public void OnPointerUp(PointerEventData eventData) => transform.localScale = _restScale;
+        public void OnPointerExit(PointerEventData eventData) => transform.localScale = _restScale;
+        private void OnDisable() => transform.localScale = _restScale;
     }
 }
