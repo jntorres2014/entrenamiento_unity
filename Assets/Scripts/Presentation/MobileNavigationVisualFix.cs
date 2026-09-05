@@ -5,9 +5,8 @@ using UnityEngine.SceneManagement;
 namespace Entrenamiento.Presentation
 {
     /// <summary>
-    /// Última capa visual de navegación. Se ejecuta justo antes de renderizar
-    /// para evitar que otros controladores vuelvan a mostrar un botón Atrás
-    /// duplicado o lo coloquen debajo de la barra de estado/cutout.
+    /// Última capa visual de navegación: un único Atrás contextual, dentro del
+    /// safe area y alineado con los headers Deportivo Pro.
     /// </summary>
     public sealed class MobileNavigationVisualFix : MonoBehaviour
     {
@@ -19,6 +18,7 @@ namespace Entrenamiento.Presentation
             "SoloCameraBack",
             "CameraBackButton",
             "ARBackButton",
+            "ProgressBackButton",
             "ModernBackButton"
         };
 
@@ -28,7 +28,6 @@ namespace Entrenamiento.Presentation
         private static void Install()
         {
             if (SceneManager.GetActiveScene().name != "TrainingNearby") return;
-
             foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (canvas != null && canvas.isRootCanvas && canvas.GetComponent<MobileNavigationVisualFix>() == null)
@@ -52,29 +51,23 @@ namespace Entrenamiento.Presentation
             bool exerciseSelector = IsActive("ExerciseSelectionPanel");
             bool soloSelector = IsActive("SoloExerciseSelection");
             bool soloOptions = IsActive("SoloOptionsPanel");
+            bool progress = IsActive("TrainingProgressPanel");
 
-            // El selector ya tiene su propio Atrás: no mostramos el global encima.
             var modernBack = FindDeep("ModernBackButton");
-            if (exerciseSelector && modernBack != null && modernBack.activeSelf)
-            {
+            if ((exerciseSelector || soloSelector || progress) && modernBack != null && modernBack.activeSelf)
                 modernBack.SetActive(false);
-            }
 
             ApplyCompactSafeBackButtons();
 
             if (exerciseSelector)
-            {
                 ReflowSelectorHeader("ExerciseSelectionPanel", "Eyebrow", "Title", "Subtitle");
-            }
             if (soloSelector)
-            {
                 ReflowSelectorHeader("SoloExerciseSelection", "Eyebrow", "Title", "Subtitle");
-            }
             if (soloOptions)
             {
                 var root = FindDeep("SoloOptionsPanel");
                 var eyebrow = FindChildText(root, "Eyebrow");
-                if (eyebrow != null) SetRect(eyebrow.rectTransform, 0.255f, 0.905f, 0.86f, 0.95f);
+                if (eyebrow != null) SetRect(eyebrow.rectTransform, 0.195f, 0.915f, 0.86f, 0.95f);
             }
         }
 
@@ -85,10 +78,8 @@ namespace Entrenamiento.Presentation
             float safeTop = safe.yMax / Screen.height;
             bool landscape = Screen.width > Screen.height;
 
-            // En 720x1600 da aproximadamente 130x96 px: compacto visualmente,
-            // pero mantiene un objetivo táctil cercano a las recomendaciones Android.
             float width = landscape ? 0.14f : 0.18f;
-            float height = landscape ? 0.09f : 0.060f;
+            float height = landscape ? 0.09f : 0.056f;
             float xMin = Mathf.Clamp01(safeLeft + 0.025f);
             float xMax = Mathf.Clamp01(xMin + width);
             float yMax = Mathf.Clamp01(safeTop - 0.016f);
@@ -114,8 +105,8 @@ namespace Entrenamiento.Presentation
                 if (label != null)
                 {
                     label.text = "←  ATRÁS";
-                    label.fontSizeMin = 13f;
-                    label.fontSizeMax = 17f;
+                    label.fontSizeMin = 12.5f;
+                    label.fontSizeMax = 16.5f;
                     label.alignment = TextAlignmentOptions.Center;
                 }
 
@@ -129,13 +120,13 @@ namespace Entrenamiento.Presentation
             if (root == null) return;
 
             var eyebrow = FindChildText(root, eyebrowName);
-            if (eyebrow != null) SetRect(eyebrow.rectTransform, 0.255f, 0.905f, 0.86f, 0.95f);
+            if (eyebrow != null) SetRect(eyebrow.rectTransform, 0.195f, 0.915f, 0.84f, 0.95f);
 
             var title = FindChildText(root, titleName);
-            if (title != null) SetRect(title.rectTransform, 0.055f, 0.815f, 0.94f, 0.875f);
+            if (title != null) SetRect(title.rectTransform, 0.055f, 0.835f, 0.94f, 0.895f);
 
             var subtitle = FindChildText(root, subtitleName);
-            if (subtitle != null) SetRect(subtitle.rectTransform, 0.055f, 0.745f, 0.94f, 0.805f);
+            if (subtitle != null) SetRect(subtitle.rectTransform, 0.055f, 0.785f, 0.94f, 0.83f);
         }
 
         private bool IsActive(string name)
@@ -148,9 +139,7 @@ namespace Entrenamiento.Presentation
         {
             if (_canvas == null) return null;
             foreach (var t in _canvas.GetComponentsInChildren<Transform>(true))
-            {
                 if (t.name == objectName) return t.gameObject;
-            }
             return null;
         }
 
@@ -158,9 +147,7 @@ namespace Entrenamiento.Presentation
         {
             if (root == null) return null;
             foreach (var text in root.GetComponentsInChildren<TMP_Text>(true))
-            {
                 if (text.name == objectName) return text;
-            }
             return null;
         }
 
