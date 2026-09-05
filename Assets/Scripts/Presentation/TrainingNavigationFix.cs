@@ -30,44 +30,37 @@ namespace Entrenamiento.Presentation
                     break;
                 }
             }
-
             if (canvas == null) return;
 
-            if (canvas.GetComponent<TrainingModernUiController>() == null)
-                canvas.gameObject.AddComponent<TrainingModernUiController>();
-            if (canvas.GetComponent<TrainingUiMagic>() == null)
-                canvas.gameObject.AddComponent<TrainingUiMagic>();
-            if (canvas.GetComponent<ARTrainingModeController>() == null)
-                canvas.gameObject.AddComponent<ARTrainingModeController>();
-            if (canvas.GetComponent<CameraTrainingModeController>() == null)
-                canvas.gameObject.AddComponent<CameraTrainingModeController>();
-            if (canvas.GetComponent<TrainingHomeCView>() == null)
-                canvas.gameObject.AddComponent<TrainingHomeCView>();
-            if (canvas.GetComponent<TrainingFlowCView>() == null)
-                canvas.gameObject.AddComponent<TrainingFlowCView>();
-            if (canvas.GetComponent<ExerciseSelectionController>() == null)
-                canvas.gameObject.AddComponent<ExerciseSelectionController>();
-            if (canvas.GetComponent<ExerciseRuntimeEnhancer>() == null)
-                canvas.gameObject.AddComponent<ExerciseRuntimeEnhancer>();
-            if (canvas.GetComponent<SoloTrainingModeController>() == null)
-                canvas.gameObject.AddComponent<SoloTrainingModeController>();
-            if (canvas.GetComponent<SoloHomeLayoutFix>() == null)
-                canvas.gameObject.AddComponent<SoloHomeLayoutFix>();
-            if (canvas.GetComponent<TrainingOverlayOrderFix>() == null)
-                canvas.gameObject.AddComponent<TrainingOverlayOrderFix>();
-            if (canvas.GetComponent<MobileBackGestureController>() == null)
-                canvas.gameObject.AddComponent<MobileBackGestureController>();
-            if (canvas.GetComponent<TrainingNavigationFix>() == null)
-                canvas.gameObject.AddComponent<TrainingNavigationFix>();
+            AddIfMissing<TrainingModernUiController>(canvas);
+            AddIfMissing<TrainingUiMagic>(canvas);
+            AddIfMissing<ARTrainingModeController>(canvas);
+            AddIfMissing<CameraTrainingModeController>(canvas);
+            AddIfMissing<TrainingHomeCView>(canvas);
+            AddIfMissing<TrainingFlowCView>(canvas);
+            AddIfMissing<ExerciseSelectionController>(canvas);
+            AddIfMissing<ExerciseRuntimeEnhancer>(canvas);
+            AddIfMissing<SoloTrainingModeController>(canvas);
+            AddIfMissing<SoloHomeLayoutFix>(canvas);
+            AddIfMissing<DeportivoProSessionSkin>(canvas);
+            AddIfMissing<TrainingHistoryTracker>(canvas);
+            AddIfMissing<TrainingProgressController>(canvas);
+            AddIfMissing<TrainingOverlayOrderFix>(canvas);
+            AddIfMissing<MobileBackGestureController>(canvas);
+            AddIfMissing<MobileNavigationVisualFix>(canvas);
+            AddIfMissing<TrainingNavigationFix>(canvas);
+        }
+
+        private static void AddIfMissing<T>(Canvas canvas) where T : Component
+        {
+            if (canvas.GetComponent<T>() == null) canvas.gameObject.AddComponent<T>();
         }
 
         private void Update()
         {
             if (_backHooked && _modernBackButton != null) return;
-
             var go = FindDeep("ModernBackButton");
             if (go == null) return;
-
             _modernBackButton = go.GetComponent<Button>();
             if (_modernBackButton == null) return;
 
@@ -84,9 +77,7 @@ namespace Entrenamiento.Presentation
         private GameObject FindDeep(string objectName)
         {
             foreach (var t in GetComponentsInChildren<Transform>(true))
-            {
                 if (t.name == objectName) return t.gameObject;
-            }
             return null;
         }
     }
