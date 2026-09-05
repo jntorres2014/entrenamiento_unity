@@ -6,11 +6,6 @@ using UnityEngine.UI;
 
 namespace Entrenamiento.Presentation
 {
-    /// <summary>
-    /// Home Deportivo Pro. Conserva los botones funcionales de la escena pero
-    /// reemplaza la composición visual anterior por una portada deportiva,
-    /// consistente con la identidad negro + verde del logo.
-    /// </summary>
     public sealed class SoloHomeLayoutFix : MonoBehaviour
     {
         private Canvas _canvas;
@@ -28,7 +23,6 @@ namespace Entrenamiento.Presentation
         private static void Install()
         {
             if (SceneManager.GetActiveScene().name != "TrainingNearby") return;
-
             foreach (var canvas in Object.FindObjectsByType<Canvas>(FindObjectsInactive.Include, FindObjectsSortMode.None))
             {
                 if (canvas != null && canvas.isRootCanvas && canvas.GetComponent<SoloHomeLayoutFix>() == null)
@@ -56,15 +50,11 @@ namespace Entrenamiento.Presentation
                 _station = FindButton("StationRoleButton");
                 _camera = FindButton("CameraTrainingButton");
                 _ar = FindButton("ARTrainingButton");
-
-                if (_rolePanel != null && _solo != null && _host != null && _station != null && _camera != null && _ar != null)
-                    break;
-
+                if (_rolePanel != null && _solo != null && _host != null && _station != null && _camera != null && _ar != null) break;
                 yield return null;
             }
 
             if (_rolePanel == null || _solo == null) yield break;
-
             CaptureRoundedSprite();
 
             var oldVisuals = FindDeep("HomeCVisuals");
@@ -85,15 +75,12 @@ namespace Entrenamiento.Presentation
             _visualRoot.transform.SetParent(_rolePanel.transform, false);
             _visualRoot.transform.SetAsFirstSibling();
             Stretch(_visualRoot.GetComponent<RectTransform>());
-
             var group = _visualRoot.GetComponent<CanvasGroup>();
             group.interactable = false;
             group.blocksRaycasts = false;
 
-            // Marca / cabecera.
             var logo = CreateRawImage(_visualRoot.transform, "ProBrandLogo", TransparentBrandLogo.Texture);
             SetRect(logo.rectTransform, 0.055f, 0.855f, 0.225f, 0.975f);
-            logo.preserveAspect = true;
 
             var kicker = CreateText(_visualRoot.transform, "ProBrandKicker", "ENTRENAMIENTO INTELIGENTE", 15.5f, FontStyles.Bold, TextAlignmentOptions.Left);
             SetRect(kicker.rectTransform, 0.245f, 0.920f, 0.78f, 0.955f);
@@ -104,13 +91,10 @@ namespace Entrenamiento.Presentation
             SetRect(status.rectTransform, 0.73f, 0.920f, 0.94f, 0.955f);
             status.color = UiTheme.Accent;
 
-            // Hero principal.
             var hero = CreateImage(_visualRoot.transform, "ProHero", UiTheme.CardElevated);
             SetRect(hero.rectTransform, 0.055f, 0.535f, 0.945f, 0.845f);
-
             var glow = CreateImage(hero.transform, "ProHeroGlow", new Color(UiTheme.Accent.r, UiTheme.Accent.g, UiTheme.Accent.b, 0.10f));
             SetRect(glow.rectTransform, 0.63f, 0.06f, 0.98f, 0.94f);
-
             var ring1 = CreateImage(hero.transform, "ProRing1", new Color(UiTheme.Accent.r, UiTheme.Accent.g, UiTheme.Accent.b, 0.16f));
             SetRect(ring1.rectTransform, 0.72f, 0.40f, 0.91f, 0.82f);
             var ring2 = CreateImage(hero.transform, "ProRing2", new Color(UiTheme.Background.r, UiTheme.Background.g, UiTheme.Background.b, 0.92f));
@@ -120,20 +104,16 @@ namespace Entrenamiento.Presentation
 
             var heroTitle = CreateText(hero.transform, "ProHeroTitle", "ENTRENÁ\n<color=#76E800>SIN LÍMITES</color>", 45f, FontStyles.Bold, TextAlignmentOptions.Left);
             SetRect(heroTitle.rectTransform, 0.055f, 0.49f, 0.68f, 0.88f);
-            heroTitle.color = UiTheme.TextPrimary;
             heroTitle.enableWordWrapping = true;
-
             var heroCopy = CreateText(hero.transform, "ProHeroCopy", "Reflejos más rápidos. Decisiones más inteligentes. Mejores resultados.", 18f, FontStyles.Normal, TextAlignmentOptions.Left);
             SetRect(heroCopy.rectTransform, 0.055f, 0.23f, 0.86f, 0.48f);
             heroCopy.color = UiTheme.TextSecondary;
             heroCopy.enableWordWrapping = true;
-
             var chips = CreateText(hero.transform, "ProHeroChips", "REACCIÓN  ·  VELOCIDAD  ·  DECISIÓN", 13.5f, FontStyles.Bold, TextAlignmentOptions.Left);
             SetRect(chips.rectTransform, 0.055f, 0.09f, 0.82f, 0.20f);
             chips.color = UiTheme.Accent;
             chips.characterSpacing = 1.2f;
 
-            // Barras de velocidad puramente decorativas.
             for (int i = 0; i < 3; i++)
             {
                 var speed = CreateImage(hero.transform, "SpeedLine" + i, new Color(UiTheme.Accent.r, UiTheme.Accent.g, UiTheme.Accent.b, 0.70f - i * 0.16f));
@@ -141,10 +121,8 @@ namespace Entrenamiento.Presentation
                 SetRect(speed.rectTransform, 0.70f + i * 0.035f, y, 0.95f, y + 0.012f);
             }
 
-            // Fondos de accesos secundarios. Los botones funcionales viven encima.
             CreateAccessCard(_visualRoot.transform, "ProHostCard", 0.055f, 0.265f, 0.485f, 0.405f, UiTheme.Accent);
             CreateAccessCard(_visualRoot.transform, "ProStationCard", 0.515f, 0.265f, 0.945f, 0.405f, UiTheme.Info);
-
             var quote = CreateText(_visualRoot.transform, "ProQuote", "“DISCIPLINA HOY. GRANDES RESULTADOS MAÑANA.”", 13f, FontStyles.Bold, TextAlignmentOptions.Center);
             SetRect(quote.rectTransform, 0.08f, 0.035f, 0.92f, 0.085f);
             quote.color = UiTheme.TextMuted;
@@ -162,25 +140,17 @@ namespace Entrenamiento.Presentation
         private void EnforceLayout()
         {
             if (!_ready || _rolePanel == null || !_rolePanel.activeInHierarchy) return;
-
             if (_visualRoot != null)
             {
                 _visualRoot.SetActive(true);
                 _visualRoot.transform.SetAsFirstSibling();
             }
 
-            StylePrimary(_solo, 0.075f, 0.435f, 0.925f, 0.505f,
-                "EMPEZAR SOLO   →", "1 TELÉFONO  ·  6 EJERCICIOS  ·  SIN ARCORE");
-
-            StyleCardButton(_host, 0.075f, 0.282f, 0.465f, 0.385f,
-                "CON PODS", "Crear y dirigir una sesión");
-            StyleCardButton(_station, 0.535f, 0.282f, 0.925f, 0.385f,
-                "ESTACIÓN", "Usar este teléfono como pod");
-
-            StyleUtility(_camera, 0.075f, 0.145f, 0.465f, 0.225f,
-                "CÁMARA", "Calibración libre");
-            StyleUtility(_ar, 0.535f, 0.145f, 0.925f, 0.225f,
-                "AR TRAINING", "Equipos compatibles");
+            StylePrimary(_solo, 0.075f, 0.435f, 0.925f, 0.505f, "EMPEZAR SOLO   →", "1 TELÉFONO  ·  6 EJERCICIOS  ·  SIN ARCORE");
+            StyleCardButton(_host, 0.075f, 0.282f, 0.465f, 0.385f, "CON PODS", "Crear y dirigir una sesión");
+            StyleCardButton(_station, 0.535f, 0.282f, 0.925f, 0.385f, "ESTACIÓN", "Usar este teléfono como pod");
+            StyleUtility(_camera, 0.075f, 0.145f, 0.465f, 0.225f, "CÁMARA", "Calibración libre");
+            StyleUtility(_ar, 0.535f, 0.145f, 0.925f, 0.225f, "AR TRAINING", "Equipos compatibles");
 
             _solo.transform.SetAsLastSibling();
             _host.transform.SetAsLastSibling();
@@ -194,14 +164,8 @@ namespace Entrenamiento.Presentation
             if (button == null) return;
             SetRect(button.GetComponent<RectTransform>(), xMin, yMin, xMax, yMax);
             var image = button.GetComponent<Image>();
-            if (image != null)
-            {
-                image.color = UiTheme.Accent;
-                ApplyRounded(image);
-            }
-            SetButtonLabel(button,
-                title + "\n<size=58%><color=#163000>" + detail + "</color></size>",
-                new Color32(0x08, 0x16, 0x08, 0xFF), 22f, TextAlignmentOptions.MidlineLeft, 24f);
+            if (image != null) { image.color = UiTheme.Accent; ApplyRounded(image); }
+            SetButtonLabel(button, title + "\n<size=58%><color=#163000>" + detail + "</color></size>", new Color32(0x08, 0x16, 0x08, 0xFF), 22f, TextAlignmentOptions.MidlineLeft, 24f);
         }
 
         private void StyleCardButton(Button button, float xMin, float yMin, float xMax, float yMax, string title, string detail)
@@ -209,14 +173,8 @@ namespace Entrenamiento.Presentation
             if (button == null) return;
             SetRect(button.GetComponent<RectTransform>(), xMin, yMin, xMax, yMax);
             var image = button.GetComponent<Image>();
-            if (image != null)
-            {
-                image.color = new Color(1f, 1f, 1f, 0.001f);
-                ApplyRounded(image);
-            }
-            SetButtonLabel(button,
-                title + "\n<size=61%><color=#B7C0CC>" + detail + "</color></size>",
-                UiTheme.TextPrimary, 21f, TextAlignmentOptions.BottomLeft, 8f);
+            if (image != null) { image.color = new Color(1f, 1f, 1f, 0.001f); ApplyRounded(image); }
+            SetButtonLabel(button, title + "\n<size=61%><color=#B7C0CC>" + detail + "</color></size>", UiTheme.TextPrimary, 21f, TextAlignmentOptions.BottomLeft, 8f);
         }
 
         private void StyleUtility(Button button, float xMin, float yMin, float xMax, float yMax, string title, string detail)
@@ -224,14 +182,8 @@ namespace Entrenamiento.Presentation
             if (button == null) return;
             SetRect(button.GetComponent<RectTransform>(), xMin, yMin, xMax, yMax);
             var image = button.GetComponent<Image>();
-            if (image != null)
-            {
-                image.color = UiTheme.Surface;
-                ApplyRounded(image);
-            }
-            SetButtonLabel(button,
-                title + "\n<size=60%><color=#B7C0CC>" + detail + "</color></size>",
-                UiTheme.TextPrimary, 16.5f, TextAlignmentOptions.MidlineLeft, 16f);
+            if (image != null) { image.color = UiTheme.Surface; ApplyRounded(image); }
+            SetButtonLabel(button, title + "\n<size=60%><color=#B7C0CC>" + detail + "</color></size>", UiTheme.TextPrimary, 16.5f, TextAlignmentOptions.MidlineLeft, 16f);
         }
 
         private void SetButtonLabel(Button button, string value, Color color, float maxSize, TextAlignmentOptions alignment, float leftPadding)
@@ -256,11 +208,7 @@ namespace Entrenamiento.Presentation
             foreach (var button in GetComponentsInChildren<Button>(true))
             {
                 var image = button.GetComponent<Image>();
-                if (image != null && image.sprite != null)
-                {
-                    _roundedSprite = image.sprite;
-                    return;
-                }
+                if (image != null && image.sprite != null) { _roundedSprite = image.sprite; return; }
             }
         }
 
@@ -284,12 +232,15 @@ namespace Entrenamiento.Presentation
 
         private static RawImage CreateRawImage(Transform parent, string name, Texture texture)
         {
-            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage));
+            var go = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(RawImage), typeof(AspectRatioFitter));
             go.transform.SetParent(parent, false);
             var image = go.GetComponent<RawImage>();
             image.texture = texture;
             image.color = Color.white;
             image.raycastTarget = false;
+            var fitter = go.GetComponent<AspectRatioFitter>();
+            fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+            fitter.aspectRatio = texture != null && texture.height > 0 ? texture.width / (float)texture.height : 1f;
             return image;
         }
 
@@ -319,10 +270,7 @@ namespace Entrenamiento.Presentation
         private GameObject FindDeep(string objectName)
         {
             if (_canvas == null) return null;
-            foreach (var t in _canvas.GetComponentsInChildren<Transform>(true))
-            {
-                if (t.name == objectName) return t.gameObject;
-            }
+            foreach (var t in _canvas.GetComponentsInChildren<Transform>(true)) if (t.name == objectName) return t.gameObject;
             return null;
         }
 
