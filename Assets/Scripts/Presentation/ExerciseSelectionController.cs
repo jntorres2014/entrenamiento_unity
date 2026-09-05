@@ -8,8 +8,8 @@ using UnityEngine.UI;
 namespace Entrenamiento.Presentation
 {
     /// <summary>
-    /// Selector visual de presets. Se abre al elegir Entrenador y deja la
-    /// configuración existente como segunda etapa del flujo.
+    /// Selector Deportivo Pro de los seis presets. Reutiliza el flujo de host
+    /// existente y solo cambia presentación / elección del ExerciseMode.
     /// </summary>
     public sealed class ExerciseSelectionController : MonoBehaviour
     {
@@ -81,64 +81,73 @@ namespace Entrenamiento.Presentation
             Stretch(_selectorRoot.GetComponent<RectTransform>());
             _selectorRoot.GetComponent<Image>().color = UiTheme.Background;
 
-            var back = CreateButton(_selectorRoot.transform, "ExerciseBackButton", "←  ATRÁS", UiTheme.CardElevated);
-            SetRect(back.GetComponent<RectTransform>(), 0.055f, 0.900f, 0.225f, 0.962f);
+            var glow = CreateImage(_selectorRoot.transform, "SelectorGlow", new Color(UiTheme.Accent.r, UiTheme.Accent.g, UiTheme.Accent.b, 0.055f));
+            SetRect(glow.rectTransform, 0.64f, 0.66f, 1.0f, 1.0f);
+
+            var back = CreateButton(_selectorRoot.transform, "ExerciseBackButton", "←", UiTheme.Surface);
+            SetRect(back.GetComponent<RectTransform>(), 0.055f, 0.905f, 0.165f, 0.962f);
             var backLabel = back.GetComponentInChildren<TMP_Text>(true);
             if (backLabel != null)
             {
-                backLabel.fontSizeMax = 18f;
-                backLabel.fontSizeMin = 14f;
+                backLabel.fontSizeMax = 24f;
+                backLabel.fontSizeMin = 18f;
             }
             back.onClick.AddListener(() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex));
 
-            var eyebrow = CreateText(_selectorRoot.transform, "Eyebrow", "CON PODS  /  EJERCICIOS", 16.5f, FontStyles.Bold, TextAlignmentOptions.Left);
-            SetRect(eyebrow.rectTransform, 0.255f, 0.905f, 0.83f, 0.948f);
+            var eyebrow = CreateText(_selectorRoot.transform, "Eyebrow", "CON PODS  /  EJERCICIOS", 14.5f, FontStyles.Bold, TextAlignmentOptions.Left);
+            SetRect(eyebrow.rectTransform, 0.195f, 0.915f, 0.80f, 0.95f);
             eyebrow.color = UiTheme.Accent;
-            eyebrow.characterSpacing = 1.5f;
+            eyebrow.characterSpacing = 1.8f;
 
-            var title = CreateText(_selectorRoot.transform, "Title", "Elegí tu entrenamiento", 38f, FontStyles.Bold, TextAlignmentOptions.Left);
-            SetRect(title.rectTransform, 0.055f, 0.815f, 0.94f, 0.875f);
+            var title = CreateText(_selectorRoot.transform, "Title", "Elegí tu entrenamiento", 36f, FontStyles.Bold, TextAlignmentOptions.Left);
+            SetRect(title.rectTransform, 0.055f, 0.835f, 0.94f, 0.895f);
 
-            var subtitle = CreateText(_selectorRoot.transform, "Subtitle", "Elegí una dinámica. La app configura automáticamente las reglas de los pods.", 18f, FontStyles.Normal, TextAlignmentOptions.Left);
-            SetRect(subtitle.rectTransform, 0.055f, 0.745f, 0.94f, 0.805f);
+            var subtitle = CreateText(_selectorRoot.transform, "Subtitle", "Desafiá tus reflejos, velocidad y toma de decisiones.", 17f, FontStyles.Normal, TextAlignmentOptions.Left);
+            SetRect(subtitle.rectTransform, 0.055f, 0.785f, 0.94f, 0.83f);
             subtitle.color = UiTheme.TextSecondary;
 
-            CreateExerciseCard(ExerciseMode.Reaction, "01", "REACCIÓN", "Un pod verde al azar. Tocá y buscá el siguiente.", UiTheme.Positive, 0.055f, 0.555f, 0.485f, 0.710f);
-            CreateExerciseCard(ExerciseMode.AllSame, "02", "TODOS IGUALES", "Todos azules al mismo tiempo. Apagalos lo más rápido posible.", UiTheme.Info, 0.515f, 0.555f, 0.945f, 0.710f);
-            CreateExerciseCard(ExerciseMode.Colors, "03", "COLORES", "Rojo, verde, azul y amarillo. Tocá solamente el color indicado.", new Color32(0xFF, 0x9D, 0x38, 0xFF), 0.055f, 0.355f, 0.485f, 0.510f);
-            CreateExerciseCard(ExerciseMode.Decision, "04", "DECISIÓN", "Cada color representa una dirección de movimiento.", UiTheme.Accent, 0.515f, 0.355f, 0.945f, 0.510f);
-            CreateExerciseCard(ExerciseMode.CognitiveFake, "05", "FINTA COGNITIVA", "El estímulo cambia mientras te acercás. Reaccioná al nuevo color.", new Color32(0xC0, 0x75, 0xFF, 0xFF), 0.055f, 0.155f, 0.485f, 0.310f);
-            CreateExerciseCard(ExerciseMode.Football, "06", "FÚTBOL", "Verde derecho · azul izquierdo · rojo no tocar.", new Color32(0x4C, 0xC9, 0x9A, 0xFF), 0.515f, 0.155f, 0.945f, 0.310f);
+            CreateExerciseRow(ExerciseMode.Reaction, "01", "REACCIÓN", "Un pod verde al azar. Tocá y buscá el siguiente.", UiTheme.Accent, 0.665f, 0.765f);
+            CreateExerciseRow(ExerciseMode.AllSame, "02", "TODOS IGUALES", "Todos azules a la vez. Apagalos lo más rápido posible.", UiTheme.Info, 0.550f, 0.650f);
+            CreateExerciseRow(ExerciseMode.Colors, "03", "COLORES", "Identificá el color indicado y tocá solamente ese pod.", new Color32(0xFF, 0x95, 0x35, 0xFF), 0.435f, 0.535f);
+            CreateExerciseRow(ExerciseMode.Decision, "04", "DECISIÓN", "Cada color representa una dirección de movimiento.", new Color32(0xF3, 0xD3, 0x44, 0xFF), 0.320f, 0.420f);
+            CreateExerciseRow(ExerciseMode.CognitiveFake, "05", "FINTA COGNITIVA", "El estímulo cambia durante la aproximación. Corregí la decisión.", new Color32(0xB9, 0x67, 0xFF, 0xFF), 0.205f, 0.305f);
+            CreateExerciseRow(ExerciseMode.Football, "06", "FÚTBOL", "Verde derecho · azul izquierdo · rojo no tocar.", new Color32(0x38, 0xD6, 0xA1, 0xFF), 0.090f, 0.190f);
 
             _selectorRoot.SetActive(false);
         }
 
-        private void CreateExerciseCard(ExerciseMode mode, string number, string title, string description, Color accent,
-            float xMin, float yMin, float xMax, float yMax)
+        private void CreateExerciseRow(ExerciseMode mode, string number, string title, string description, Color accent, float yMin, float yMax)
         {
             var button = CreateButton(_selectorRoot.transform, "Exercise_" + mode, string.Empty, UiTheme.CardElevated);
-            SetRect(button.GetComponent<RectTransform>(), xMin, yMin, xMax, yMax);
+            SetRect(button.GetComponent<RectTransform>(), 0.055f, yMin, 0.945f, yMax);
 
             var image = button.GetComponent<Image>();
             image.color = UiTheme.CardElevated;
 
-            var line = CreateImage(button.transform, "Accent", accent);
-            SetRect(line.rectTransform, 0.055f, 0.855f, 0.38f, 0.885f);
+            var rail = CreateImage(button.transform, "AccentRail", accent);
+            SetRect(rail.rectTransform, 0.018f, 0.17f, 0.028f, 0.83f);
 
-            var num = CreateText(button.transform, "Number", number, 14f, FontStyles.Bold, TextAlignmentOptions.TopRight);
-            SetRect(num.rectTransform, 0.76f, 0.72f, 0.92f, 0.91f);
-            num.color = UiTheme.TextMuted;
+            var badge = CreateImage(button.transform, "NumberBadge", new Color(accent.r, accent.g, accent.b, 0.18f));
+            SetRect(badge.rectTransform, 0.055f, 0.22f, 0.155f, 0.78f);
 
-            var heading = CreateText(button.transform, "Heading", title, 23f, FontStyles.Bold, TextAlignmentOptions.Left);
-            SetRect(heading.rectTransform, 0.055f, 0.50f, 0.92f, 0.72f);
+            var num = CreateText(badge.transform, "Number", number, 15f, FontStyles.Bold, TextAlignmentOptions.Center);
+            Stretch(num.rectTransform);
+            num.color = accent;
+
+            var heading = CreateText(button.transform, "Heading", title, 21f, FontStyles.Bold, TextAlignmentOptions.Left);
+            SetRect(heading.rectTransform, 0.19f, 0.48f, 0.76f, 0.80f);
             heading.color = UiTheme.TextPrimary;
 
-            var detail = CreateText(button.transform, "Detail", description, 16.5f, FontStyles.Normal, TextAlignmentOptions.TopLeft);
-            SetRect(detail.rectTransform, 0.055f, 0.12f, 0.92f, 0.47f);
+            var detail = CreateText(button.transform, "Detail", description, 14.5f, FontStyles.Normal, TextAlignmentOptions.Left);
+            SetRect(detail.rectTransform, 0.19f, 0.14f, 0.85f, 0.49f);
             detail.color = UiTheme.TextSecondary;
             detail.enableWordWrapping = true;
-            detail.fontSizeMin = 13f;
-            detail.fontSizeMax = 17f;
+            detail.fontSizeMin = 11.5f;
+            detail.fontSizeMax = 14.5f;
+
+            var arrow = CreateText(button.transform, "Arrow", "→", 24f, FontStyles.Bold, TextAlignmentOptions.Center);
+            SetRect(arrow.rectTransform, 0.86f, 0.25f, 0.95f, 0.75f);
+            arrow.color = accent;
 
             button.onClick.AddListener(() => SelectExercise(mode));
         }
@@ -158,10 +167,7 @@ namespace Entrenamiento.Presentation
             ExerciseSelection.Current = mode;
             _selectorRoot.SetActive(false);
 
-            if (_configPanel != null)
-            {
-                _configPanel.SetActive(true);
-            }
+            if (_configPanel != null) _configPanel.SetActive(true);
 
             var modernBack = FindDeep("ModernBackButton");
             if (modernBack != null)
@@ -185,20 +191,14 @@ namespace Entrenamiento.Presentation
             if (_modeButton != null)
             {
                 var label = _modeButton.GetComponentInChildren<TMP_Text>(true);
-                if (label != null)
-                {
-                    label.text = "EJERCICIO  •  " + ExerciseSelection.Name(ExerciseSelection.Current);
-                }
+                if (label != null) label.text = ExerciseSelection.Name(ExerciseSelection.Current);
                 MakeReadOnlyVisible(_modeButton);
             }
 
             if (_colorButton != null)
             {
                 var label = _colorButton.GetComponentInChildren<TMP_Text>(true);
-                if (label != null)
-                {
-                    label.text = ExerciseSelection.Rule(ExerciseSelection.Current);
-                }
+                if (label != null) label.text = ExerciseSelection.Rule(ExerciseSelection.Current);
                 MakeReadOnlyVisible(_colorButton);
             }
         }
@@ -230,18 +230,14 @@ namespace Entrenamiento.Presentation
             go.transform.SetParent(parent, false);
             var image = go.GetComponent<Image>();
             image.color = color;
-            if (_roundedSprite != null)
-            {
-                image.sprite = _roundedSprite;
-                image.type = Image.Type.Sliced;
-            }
+            ApplyRounded(image);
 
             var button = go.GetComponent<Button>();
             button.targetGraphic = image;
             var colors = button.colors;
             colors.normalColor = Color.white;
-            colors.highlightedColor = Color.white;
-            colors.pressedColor = new Color(0.82f, 0.82f, 0.82f, 1f);
+            colors.highlightedColor = new Color(1.04f, 1.04f, 1.04f, 1f);
+            colors.pressedColor = new Color(0.78f, 0.78f, 0.78f, 1f);
             colors.selectedColor = Color.white;
             colors.disabledColor = UiTheme.Disabled;
             colors.fadeDuration = 0.08f;
@@ -250,10 +246,10 @@ namespace Entrenamiento.Presentation
 
             if (!string.IsNullOrEmpty(text))
             {
-                var label = CreateText(go.transform, "Label", text, 20f, FontStyles.Bold, TextAlignmentOptions.Center);
+                var label = CreateText(go.transform, "Label", text, 19f, FontStyles.Bold, TextAlignmentOptions.Center);
                 Stretch(label.rectTransform);
-                label.rectTransform.offsetMin = new Vector2(12f, 5f);
-                label.rectTransform.offsetMax = new Vector2(-12f, -5f);
+                label.rectTransform.offsetMin = new Vector2(10f, 4f);
+                label.rectTransform.offsetMax = new Vector2(-10f, -4f);
             }
             return button;
         }
@@ -265,12 +261,15 @@ namespace Entrenamiento.Presentation
             var image = go.GetComponent<Image>();
             image.color = color;
             image.raycastTarget = false;
-            if (_roundedSprite != null)
-            {
-                image.sprite = _roundedSprite;
-                image.type = Image.Type.Sliced;
-            }
+            ApplyRounded(image);
             return image;
+        }
+
+        private void ApplyRounded(Image image)
+        {
+            if (image == null || _roundedSprite == null) return;
+            image.sprite = _roundedSprite;
+            image.type = Image.Type.Sliced;
         }
 
         private static TMP_Text CreateText(Transform parent, string name, string value, float size, FontStyles style, TextAlignmentOptions alignment)
@@ -285,7 +284,7 @@ namespace Entrenamiento.Presentation
             label.color = UiTheme.TextPrimary;
             label.raycastTarget = false;
             label.enableAutoSizing = true;
-            label.fontSizeMin = Mathf.Max(11f, size * 0.58f);
+            label.fontSizeMin = Mathf.Max(10f, size * 0.58f);
             label.fontSizeMax = size;
             return label;
         }
@@ -294,9 +293,7 @@ namespace Entrenamiento.Presentation
         {
             if (_canvas == null) return null;
             foreach (var t in _canvas.GetComponentsInChildren<Transform>(true))
-            {
                 if (t.name == objectName) return t.gameObject;
-            }
             return null;
         }
 
@@ -312,6 +309,7 @@ namespace Entrenamiento.Presentation
             rect.anchorMax = new Vector2(xMax, yMax);
             rect.offsetMin = Vector2.zero;
             rect.offsetMax = Vector2.zero;
+            rect.localScale = Vector3.one;
         }
 
         private static void Stretch(RectTransform rect)
