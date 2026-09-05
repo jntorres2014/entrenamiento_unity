@@ -48,6 +48,7 @@ namespace Entrenamiento.Presentation
             AddIfMissing<TrainingOverlayOrderFix>(canvas);
             AddIfMissing<MobileBackGestureController>(canvas);
             AddIfMissing<MobileNavigationVisualFix>(canvas);
+            AddIfMissing<ProOverlayNavigationController>(canvas);
             AddIfMissing<TrainingNavigationFix>(canvas);
         }
 
