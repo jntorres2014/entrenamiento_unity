@@ -45,8 +45,6 @@ namespace Entrenamiento.Presentation
 
         private IEnumerator SetupWhenReady()
         {
-            // Bootstrap agrega sus listeners en Start. Esperamos para que nuestro
-            // selector se ejecute después de ChooseRole(Host).
             yield return null;
             yield return null;
 
@@ -83,28 +81,34 @@ namespace Entrenamiento.Presentation
             Stretch(_selectorRoot.GetComponent<RectTransform>());
             _selectorRoot.GetComponent<Image>().color = UiTheme.Background;
 
-            var eyebrow = CreateText(_selectorRoot.transform, "Eyebrow", "ENTRENADOR  /  EJERCICIOS", 18f, FontStyles.Bold, TextAlignmentOptions.Left);
-            SetRect(eyebrow.rectTransform, 0.055f, 0.93f, 0.78f, 0.97f);
+            var back = CreateButton(_selectorRoot.transform, "ExerciseBackButton", "←  ATRÁS", UiTheme.CardElevated);
+            SetRect(back.GetComponent<RectTransform>(), 0.055f, 0.900f, 0.225f, 0.962f);
+            var backLabel = back.GetComponentInChildren<TMP_Text>(true);
+            if (backLabel != null)
+            {
+                backLabel.fontSizeMax = 18f;
+                backLabel.fontSizeMin = 14f;
+            }
+            back.onClick.AddListener(() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex));
+
+            var eyebrow = CreateText(_selectorRoot.transform, "Eyebrow", "CON PODS  /  EJERCICIOS", 16.5f, FontStyles.Bold, TextAlignmentOptions.Left);
+            SetRect(eyebrow.rectTransform, 0.255f, 0.905f, 0.83f, 0.948f);
             eyebrow.color = UiTheme.Accent;
-            eyebrow.characterSpacing = 2f;
+            eyebrow.characterSpacing = 1.5f;
 
-            var title = CreateText(_selectorRoot.transform, "Title", "Elegí tu entrenamiento", 43f, FontStyles.Bold, TextAlignmentOptions.Left);
-            SetRect(title.rectTransform, 0.055f, 0.855f, 0.94f, 0.925f);
+            var title = CreateText(_selectorRoot.transform, "Title", "Elegí tu entrenamiento", 38f, FontStyles.Bold, TextAlignmentOptions.Left);
+            SetRect(title.rectTransform, 0.055f, 0.815f, 0.94f, 0.875f);
 
-            var subtitle = CreateText(_selectorRoot.transform, "Subtitle", "Cada preset configura automáticamente el comportamiento de los pods.", 19f, FontStyles.Normal, TextAlignmentOptions.Left);
-            SetRect(subtitle.rectTransform, 0.055f, 0.805f, 0.94f, 0.855f);
+            var subtitle = CreateText(_selectorRoot.transform, "Subtitle", "Elegí una dinámica. La app configura automáticamente las reglas de los pods.", 18f, FontStyles.Normal, TextAlignmentOptions.Left);
+            SetRect(subtitle.rectTransform, 0.055f, 0.745f, 0.94f, 0.805f);
             subtitle.color = UiTheme.TextSecondary;
 
-            CreateExerciseCard(ExerciseMode.Reaction, "01", "REACCIÓN", "Un pod verde al azar. Tocá y buscá el siguiente.", UiTheme.Positive, 0.055f, 0.585f, 0.485f, 0.775f);
-            CreateExerciseCard(ExerciseMode.AllSame, "02", "TODOS IGUALES", "Todos azules al mismo tiempo. Apagalos lo más rápido posible.", UiTheme.Info, 0.515f, 0.585f, 0.945f, 0.775f);
-            CreateExerciseCard(ExerciseMode.Colors, "03", "COLORES", "Rojo, verde, azul y amarillo. Tocá solamente el color indicado.", UiTheme.Accent, 0.055f, 0.365f, 0.485f, 0.555f);
-            CreateExerciseCard(ExerciseMode.Decision, "04", "DECISIÓN", "Cada color representa una dirección de movimiento.", UiTheme.AccentLime, 0.515f, 0.365f, 0.945f, 0.555f);
-            CreateExerciseCard(ExerciseMode.CognitiveFake, "05", "FINTA COGNITIVA", "El estímulo cambia mientras te acercás. Reaccioná al nuevo color.", new Color32(0xC0, 0x75, 0xFF, 0xFF), 0.055f, 0.145f, 0.485f, 0.335f);
-            CreateExerciseCard(ExerciseMode.Football, "06", "FÚTBOL", "Verde derecho · azul izquierdo · rojo no tocar.", new Color32(0x4C, 0xC9, 0x9A, 0xFF), 0.515f, 0.145f, 0.945f, 0.335f);
-
-            var back = CreateButton(_selectorRoot.transform, "ExerciseBackButton", "←  VOLVER", UiTheme.CardElevated);
-            SetRect(back.GetComponent<RectTransform>(), 0.055f, 0.045f, 0.34f, 0.105f);
-            back.onClick.AddListener(() => SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex));
+            CreateExerciseCard(ExerciseMode.Reaction, "01", "REACCIÓN", "Un pod verde al azar. Tocá y buscá el siguiente.", UiTheme.Positive, 0.055f, 0.555f, 0.485f, 0.710f);
+            CreateExerciseCard(ExerciseMode.AllSame, "02", "TODOS IGUALES", "Todos azules al mismo tiempo. Apagalos lo más rápido posible.", UiTheme.Info, 0.515f, 0.555f, 0.945f, 0.710f);
+            CreateExerciseCard(ExerciseMode.Colors, "03", "COLORES", "Rojo, verde, azul y amarillo. Tocá solamente el color indicado.", new Color32(0xFF, 0x9D, 0x38, 0xFF), 0.055f, 0.355f, 0.485f, 0.510f);
+            CreateExerciseCard(ExerciseMode.Decision, "04", "DECISIÓN", "Cada color representa una dirección de movimiento.", UiTheme.Accent, 0.515f, 0.355f, 0.945f, 0.510f);
+            CreateExerciseCard(ExerciseMode.CognitiveFake, "05", "FINTA COGNITIVA", "El estímulo cambia mientras te acercás. Reaccioná al nuevo color.", new Color32(0xC0, 0x75, 0xFF, 0xFF), 0.055f, 0.155f, 0.485f, 0.310f);
+            CreateExerciseCard(ExerciseMode.Football, "06", "FÚTBOL", "Verde derecho · azul izquierdo · rojo no tocar.", new Color32(0x4C, 0xC9, 0x9A, 0xFF), 0.515f, 0.155f, 0.945f, 0.310f);
 
             _selectorRoot.SetActive(false);
         }
@@ -119,20 +123,22 @@ namespace Entrenamiento.Presentation
             image.color = UiTheme.CardElevated;
 
             var line = CreateImage(button.transform, "Accent", accent);
-            SetRect(line.rectTransform, 0.055f, 0.86f, 0.42f, 0.89f);
+            SetRect(line.rectTransform, 0.055f, 0.855f, 0.38f, 0.885f);
 
-            var num = CreateText(button.transform, "Number", number, 15f, FontStyles.Bold, TextAlignmentOptions.TopRight);
-            SetRect(num.rectTransform, 0.76f, 0.70f, 0.92f, 0.91f);
+            var num = CreateText(button.transform, "Number", number, 14f, FontStyles.Bold, TextAlignmentOptions.TopRight);
+            SetRect(num.rectTransform, 0.76f, 0.72f, 0.92f, 0.91f);
             num.color = UiTheme.TextMuted;
 
-            var heading = CreateText(button.transform, "Heading", title, 25f, FontStyles.Bold, TextAlignmentOptions.Left);
-            SetRect(heading.rectTransform, 0.055f, 0.48f, 0.90f, 0.73f);
+            var heading = CreateText(button.transform, "Heading", title, 23f, FontStyles.Bold, TextAlignmentOptions.Left);
+            SetRect(heading.rectTransform, 0.055f, 0.50f, 0.92f, 0.72f);
             heading.color = UiTheme.TextPrimary;
 
             var detail = CreateText(button.transform, "Detail", description, 16.5f, FontStyles.Normal, TextAlignmentOptions.TopLeft);
-            SetRect(detail.rectTransform, 0.055f, 0.10f, 0.91f, 0.48f);
+            SetRect(detail.rectTransform, 0.055f, 0.12f, 0.92f, 0.47f);
             detail.color = UiTheme.TextSecondary;
             detail.enableWordWrapping = true;
+            detail.fontSizeMin = 13f;
+            detail.fontSizeMax = 17f;
 
             button.onClick.AddListener(() => SelectExercise(mode));
         }
