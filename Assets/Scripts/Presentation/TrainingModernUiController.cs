@@ -1,6 +1,7 @@
 using System.Collections;
 using TMPro;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -314,7 +315,7 @@ namespace Entrenamiento.Presentation
             UpdateBackButton();
             PolishDynamicLabels();
 
-            if (Input.GetKeyDown(KeyCode.Escape))
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 if (_backButton != null && _backButton.gameObject.activeSelf)
                 {
